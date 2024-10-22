@@ -31,3 +31,23 @@ def mutate(melody, mutation_rate=0.1):
         if random.random() < mutation_rate:
             melody[i] = random.randint(60, 72)  # Mutate the note
     return melody
+
+# Function to evolve the population
+def evolve_population(population, num_generations=10, mutation_rate=0.1):
+    for generation in range(num_generations):
+        # Calculate fitness scores
+        fitness_scores = [mock_fitness_function(melody) for melody in population]
+
+        # Select the top melodies
+        selected = selection(population, fitness_scores)
+
+        # Create next generation through crossover and mutation
+        next_generation = []
+        while len(next_generation) < len(population):
+            parent1, parent2 = random.sample(selected, 2)
+            child = crossover(parent1, parent2)
+            child = mutate(child, mutation_rate)
+            next_generation.append(child)
+
+        population = next_generation
+    return population
