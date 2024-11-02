@@ -57,12 +57,29 @@
             });
         }
 
-        // Placeholder function to submit rating
         function submitRating(index) {
-            const rating = document.getElementById(`rating${index}`).value;
-            console.log(`Submitting rating ${rating} for Melody ${index + 1}`);
-            // Here, we'll send the rating to the server with AJAX
-        }
+    const rating = document.getElementById(`rating${index}`).value;
+
+    // Send rating to Flask via AJAX (using fetch)
+    fetch('/rate', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            melodyIndex: index,  // Send the index of the melody being rated
+            rating: rating       // Send the user's rating
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert(data.message);  // Display the server's response
+    })
+    .catch(error => {
+        console.error('Error submitting rating:', error);
+    });
+}
+
     </script>
 </body>
 </html>
