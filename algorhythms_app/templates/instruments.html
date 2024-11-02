@@ -3,18 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Select Instruments</title>
+    <title>Melody Playback and Rating</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.26/Tone.js"></script>
-
 </head>
 <body>
-    <h1>Select Instruments</h1>
-    <form method="POST" action="/instruments">
-        <label for="instruments">Choose instruments:</label><br>
-        <input type="checkbox" name="instruments" value="piano"> Piano<br>
-        <input type="checkbox" name="instruments" value="drums"> Drums<br>
-        <input type="checkbox" name="instruments" value="guitar"> Guitar<br>
-        <input type="submit" value="Submit">
-    </form>
+    <h1>Generated Melodies</h1>
+    <button onclick="fetchMelodies()">Generate Melodies</button>
+    <div id="melody-list"></div>
+
+    <script>
+        // Function to fetch melodies from the backend
+        function fetchMelodies() {
+            fetch('/generate')
+                .then(response => response.json())
+                .then(data => {
+                    displayMelodies(data.melodies);
+                })
+                .catch(error => console.error('Error fetching melodies:', error));
+        }
+
+        // Function to play a melody using Tone.js
+        function playMelody(melody) {
+            const synth = new Tone.Synth().toDestination();
+            let now = Tone.now();
+
+            melody.forEach((note, index) => {
+                synth.triggerAttackRelease(Tone.Frequency(note, "midi").toFrequency(), "8n", now + index * 0.5);
+            });
+        }
+
+        // Function to display melodies with play and rate options
+        function displayMelodies(melodies) {
+            const melodyListDiv = document.getElementById('melody-list');
+            melodyListDiv.innerHTML = ''; // Clear existing content
+
+            melodies.forEach((melody, index) => {
+                const melodyDiv = document.createElement('div');
+                melodyDiv.innerHTML = `
+                    <p>Melody ${index + 1}: ${melody.join(', ')}</p>
+                    <button onclick="playMelody([${melody}])">Play Melody ${index + 1}</button>
+                    <label for="rating${index}">Rate this melody:</label>
+                    <select id="rating${index}">
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                    </select>
+                    <button onclick="submitRating(${index})">Submit Rating</button>
+                    <hr>
+                `;
+                melodyListDiv.appendChild(melodyDiv);
+            });
+        }
+
+        // Placeholder function to submit rating
+        function submitRating(index) {
+            const rating = document.getElementById(`rating${index}`).value;
+            console.log(`Submitting rating ${rating} for Melody ${index + 1}`);
+            // Here, we'll send the rating to the server with AJAX
+        }
+    </script>
 </body>
 </html>
