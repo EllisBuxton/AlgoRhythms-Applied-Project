@@ -35,15 +35,15 @@ def mutate(melody, mutation_rate=0.1):
     return melody
 
 # Function to evolve the population
-def evolve_population(population, num_generations=10, mutation_rate=0.1):
+def evolve_population(population, ratings_dict, num_generations=10, mutation_rate=0.1):
     for generation in range(num_generations):
-        # Calculate fitness scores
-        fitness_scores = [mock_fitness_function(melody) for melody in population]
+        # Step 1: Calculate fitness scores based on actual ratings
+        fitness_scores = [calculate_fitness(i, ratings_dict) for i in range(len(population))]
 
-        # Select the top melodies
+        # Step 2: Select the top melodies
         selected = selection(population, fitness_scores)
 
-        # Create next generation through crossover and mutation
+        # Step 3: Create next generation through crossover and mutation
         next_generation = []
         while len(next_generation) < len(population):
             parent1, parent2 = random.sample(selected, 2)
