@@ -9,6 +9,7 @@
 <body>
     <h1>Generated Melodies</h1>
     <button onclick="fetchMelodies()">Generate Melodies</button>
+    <button onclick="evolveMelodies()">Evolve Melodies</button>
     <div id="melody-list"></div>
 
     <script>
@@ -20,6 +21,16 @@
                     displayMelodies(data.melodies);
                 })
                 .catch(error => console.error('Error fetching melodies:', error));
+        }
+
+        // Fetch evolved melodies from the /evolve route
+        function evolveMelodies() {
+            fetch('/evolve')
+                .then(response => response.json())
+                .then(data => {
+                    displayMelodies(data.melodies);
+                })
+                .catch(error => console.error('Error evolving melodies:', error));
         }
 
         // Function to play a melody using Tone.js
