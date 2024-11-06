@@ -9,28 +9,24 @@
 <body>
     <h1>Generated Melodies</h1>
     <button onclick="fetchMelodies()">Generate Melodies</button>
-    <button onclick="evolveMelodies()">Evolve Melodies</button>
+    <button id="evolve-button" onclick="evolveMelodies()" disabled>Evolve Melodies</button>
     <div id="melody-list"></div>
 
     <script>
+        let melodyCount = 0;  // Total number of melodies generated
+        let ratedMelodies = new Set();  // Track indices of rated melodies
+
         // Function to fetch melodies from the backend
         function fetchMelodies() {
             fetch('/generate')
                 .then(response => response.json())
                 .then(data => {
                     displayMelodies(data.melodies);
+                    melodyCount = data.melodies.length;
+                    ratedMelodies.clear();  // Reset rated melodies tracking
+                    document.getElementById("evolve-button").disabled = true;  // Disable evolve button initially
                 })
                 .catch(error => console.error('Error fetching melodies:', error));
-        }
-
-        // Fetch evolved melodies from the /evolve route
-        function evolveMelodies() {
-            fetch('/evolve')
-                .then(response => response.json())
-                .then(data => {
-                    displayMelodies(data.melodies);
-                })
-                .catch(error => console.error('Error evolving melodies:', error));
         }
 
         // Function to play a melody using Tone.js
@@ -46,7 +42,7 @@
         // Function to display melodies with play and rate options
         function displayMelodies(melodies) {
             const melodyListDiv = document.getElementById('melody-list');
-            melodyListDiv.innerHTML = ''; // Clear existing content
+            melodyListDiv.innerHTML = '';  // Clear existing content
 
             melodies.forEach((melody, index) => {
                 const melodyDiv = document.createElement('div');
@@ -55,6 +51,7 @@
                     <button onclick="playMelody([${melody}])">Play Melody ${index + 1}</button>
                     <label for="rating${index}">Rate this melody:</label>
                     <select id="rating${index}">
+                        <option value="" disabled selected>Select rating</option>
                         <option value="1">1</option>
                         <option value="2">2</option>
                         <option value="3">3</option>
@@ -68,29 +65,53 @@
             });
         }
 
+        // Function to submit a rating and track rating completion
         function submitRating(index) {
-    const rating = document.getElementById(`rating${index}`).value;
+            const ratingSelect = document.getElementById(`rating${index}`);
+            const rating = ratingSelect.value;
 
-    // Send rating to Flask via AJAX (using fetch)
-    fetch('/rate', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            melodyIndex: index,  // Send the index of the melody being rated
-            rating: rating       // Send the user's rating
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        alert(data.message);  // Display the server's response
-    })
-    .catch(error => {
-        console.error('Error submitting rating:', error);
-    });
-}
+            if (!rating) {
+                alert("Please select a rating before submitting.");
+                return;
+            }
 
+            // Send the rating to the server
+            fetch('/rate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    melodyIndex: index,
+                    rating: rating
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);  // Display server's response
+
+                // Add the melody index to the rated melodies set
+                ratedMelodies.add(index);
+
+                // Check if all melodies have been rated
+                if (ratedMelodies.size === melodyCount) {
+                    document.getElementById("evolve-button").disabled = false;  // Enable evolve button
+                }
+            })
+            .catch(error => console.error('Error submitting rating:', error));
+        }
+
+        // Fetch evolved melodies from the backend
+        function evolveMelodies() {
+            fetch('/evolve')
+                .then(response => response.json())
+                .then(data => {
+                    displayMelodies(data.melodies);
+                    ratedMelodies.clear();  // Reset tracking for the new set of melodies
+                    document.getElementById("evolve-button").disabled = true;  // Disable evolve button until all new melodies are rated
+                })
+                .catch(error => console.error('Error evolving melodies:', error));
+        }
     </script>
 </body>
 </html>
