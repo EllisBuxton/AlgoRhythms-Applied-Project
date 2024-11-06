@@ -44,6 +44,20 @@ def rate_melody():
 
     return jsonify({'message': f'Melody {melody_index + 1} rated {rating}'})
 
+# Initialize population on app start
+population_size = 10
+melody_length = 8
+population = initialize_population(population_size, melody_length)
+
+# Route to evolve melodies based on ratings
+@app.route('/evolve', methods=['GET'])
+def evolve_melodies():
+    global population
+    population = evolve_population(population, melody_ratings, num_generations=5, mutation_rate=0.1)
+
+    # Return the newly evolved population
+    return jsonify({'melodies': population})
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)
