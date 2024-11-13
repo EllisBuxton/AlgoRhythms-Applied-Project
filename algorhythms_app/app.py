@@ -1,7 +1,9 @@
 from flask import Flask, jsonify, render_template, request
 from genetic_algorithm import initialize_population, evolve_population
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 # Home route
 @app.route('/')
