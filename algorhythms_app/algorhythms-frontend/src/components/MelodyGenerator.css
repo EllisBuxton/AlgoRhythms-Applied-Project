@@ -47,8 +47,23 @@
   background-color: #2a2a2a;
 }
 
-.rating-section {
-  margin-top: 10px;
+.star-rating {
+  display: inline-flex;
+  gap: 5px;
+  margin-bottom: 5px;
+}
+
+.star {
+  font-size: 24px;
+  cursor: pointer;
+  color: #4a4a4a;
+  transition: color 0.2s ease;
+}
+
+.star.hover,
+.star.active {
+  color: #ffd700;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
 }
 
 .evolve-button {
@@ -83,6 +98,9 @@ button:disabled {
 
 button:hover:not(:disabled) {
   background-color: #6b3a91;
+  box-shadow: 0 0 15px #894ab6;
+  transform: scale(1.02);
+  transition: all 0.2s ease;
 }
 
 select {
@@ -100,4 +118,36 @@ h1, h2 {
 
 p {
   color: #e0e0e0;
+}
+
+.rating-section {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+}
+
+.rating-submitted {
+  color: #4CAF50;
+  font-size: 24px;
+  margin-left: 10px;
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.rating-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rating-section button {
+  padding: 8px 16px;
+  font-size: 0.9em;
 } 

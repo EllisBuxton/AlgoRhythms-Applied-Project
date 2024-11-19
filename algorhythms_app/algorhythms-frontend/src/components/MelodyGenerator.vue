@@ -20,15 +20,31 @@
           <button @click="playMelody(melody)">Play Melody {{ index + 1 }}</button>
           
           <div class="rating-section">
-            <label :for="'rating' + index">Rate this melody:</label>
-            <select 
-              v-model="ratings[index]" 
-              :id="'rating' + index"
-            >
-              <option value="" disabled>Select rating</option>
-              <option v-for="n in 5" :key="n" :value="n">{{ n }}</option>
-            </select>
-            <button @click="submitRating(index)">Submit Rating</button>
+            <div class="star-rating">
+              <span 
+                v-for="star in 5" 
+                :key="star"
+                class="star"
+                :class="{ 
+                  active: (ratings[index] || 0) >= star,
+                  hover: (hoverRatings[index] || 0) >= star 
+                }"
+                @click="rateMelody(index, star)"
+                @mouseenter="setHoverRating(index, star)"
+                @mouseleave="setHoverRating(index, 0)"
+              >
+                ★
+              </span>
+            </div>
+            <div class="rating-status">
+              <button 
+                @click="submitRating(index)" 
+                :disabled="!ratings[index] || ratedMelodies.has(index)"
+              >
+                Submit Rating
+              </button>
+              <span v-if="ratedMelodies.has(index)" class="rating-submitted">✓</span>
+            </div>
           </div>
           <hr>
         </div>
@@ -54,7 +70,8 @@ export default {
       selectedInstrument: null,
       melodies: [],
       ratings: {},
-      ratedMelodies: new Set()
+      ratedMelodies: new Set(),
+      hoverRatings: {}
     }
   },
   computed: {
@@ -90,28 +107,29 @@ export default {
         )
       })
     },
+    rateMelody(index, rating) {
+      this.ratings[index] = rating;
+    },
     async submitRating(index) {
-      if (!this.ratings[index]) {
-        alert("Please select a rating before submitting.")
-        return
-      }
-
+      if (!this.ratings[index]) return;
+      
       try {
         const response = await fetch('http://localhost:5000/rate', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             melodyIndex: index,
             rating: this.ratings[index]
-          })
-        })
-        const data = await response.json()
-        alert(data.message)
-        this.ratedMelodies.add(index)
+          }),
+        });
+
+        if (response.ok) {
+          this.ratedMelodies.add(index);
+        }
       } catch (error) {
-        console.error('Error submitting rating:', error)
+        console.error('Error submitting rating:', error);
       }
     },
     async evolveMelodies() {
@@ -124,6 +142,9 @@ export default {
       } catch (error) {
         console.error('Error evolving melodies:', error)
       }
+    },
+    setHoverRating(index, rating) {
+      this.hoverRatings[index] = rating;
     }
   }
 }

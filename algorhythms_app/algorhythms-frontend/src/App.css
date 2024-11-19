@@ -57,4 +57,11 @@ a:hover {
 ::selection {
   background-color: #894ab6;
   color: white;
+}
+
+button:hover:not(:disabled) {
+  background-color: #6b3a91;
+  box-shadow: 0 0 15px #894ab6;
+  transform: scale(1.02);
+  transition: all 0.2s ease;
 } 
