@@ -8,7 +8,7 @@
 
 <script>
 import MelodyGenerator from './components/MelodyGenerator.vue'
-
+import './App.css'
 export default {
   name: 'App',
   components: {
@@ -16,24 +16,3 @@ export default {
   }
 }
 </script>
-
-<style>
-#app {
-  font-family: Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
-
-h1 {
-  color: #34495e;
-  margin-bottom: 10px;
-}
-
-p {
-  color: #7f8c8d;
-  margin-bottom: 30px;
-}
-</style>

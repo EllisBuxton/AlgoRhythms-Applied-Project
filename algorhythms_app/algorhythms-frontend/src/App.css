@@ -1,0 +1,60 @@
+#app {
+  font-family: Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-align: center;
+  background-color: #1a1a1a;
+  color: white;
+  margin: 0;
+  padding-top: 60px;
+  min-height: 100vh;
+}
+
+h1 {
+  color: #e1bee7;
+  margin-bottom: 10px;
+}
+
+p {
+  color: #e0e0e0;
+  margin-bottom: 30px;
+}
+
+body {
+  margin: 0;
+  background-color: #1a1a1a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  line-height: 1.6;
+  font-size: 16px;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+a {
+  color: #e1bee7;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+a:hover {
+  color: #894ab6;
+}
+
+::selection {
+  background-color: #894ab6;
+  color: white;
+} 

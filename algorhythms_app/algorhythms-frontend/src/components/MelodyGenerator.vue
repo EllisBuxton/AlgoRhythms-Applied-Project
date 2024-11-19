@@ -45,6 +45,7 @@
 
 <script>
 import * as Tone from 'tone'
+import './MelodyGenerator.css'
 
 export default {
   name: 'MelodyGenerator',
@@ -127,94 +128,3 @@ export default {
   }
 }
 </script>
-
-<style scoped>
-.melody-generator {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
-.instrument-buttons {
-  margin: 20px 0;
-  display: flex;
-  justify-content: center;
-  gap: 15px;
-}
-
-.instrument-buttons button {
-  padding: 12px 24px;
-  font-size: 1.1em;
-  border-radius: 8px;
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.instrument-buttons button:disabled {
-  background-color: #cccccc;
-  cursor: not-allowed;
-}
-
-.instrument-buttons button.active {
-  background-color: #2E7D32;
-  transform: scale(1.05);
-}
-
-.instrument-section {
-  margin-top: 30px;
-}
-
-.melody-item {
-  margin-bottom: 20px;
-  padding: 15px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-}
-
-.rating-section {
-  margin-top: 10px;
-}
-
-.evolve-button {
-  margin-top: 20px;
-  padding: 10px 20px;
-  background-color: #2196F3;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.evolve-button:disabled {
-  background-color: #cccccc;
-  cursor: not-allowed;
-}
-
-button {
-  margin: 5px;
-  padding: 8px 16px;
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-button:disabled {
-  background-color: #cccccc;
-  cursor: not-allowed;
-}
-
-select {
-  margin: 0 10px;
-  padding: 5px;
-}
-
-h2 {
-  color: #34495e;
-  margin-bottom: 20px;
-}
-</style>
