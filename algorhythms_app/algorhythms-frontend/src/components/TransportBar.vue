@@ -58,8 +58,8 @@ export default {
     },
     startTimer() {
       this.timer = setInterval(() => {
-        this.currentTime += 0.1;
-      }, 100);
+        this.currentTime += 0.01;
+      }, 10);
     },
     pauseTimer() {
       if (this.timer) {
@@ -69,8 +69,8 @@ export default {
     formatTime(time) {
       const minutes = Math.floor(time / 60);
       const seconds = Math.floor(time % 60);
-      const milliseconds = Math.floor((time % 1) * 10);
-      return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds}`;
+      const milliseconds = Math.floor((time % 1) * 1000);
+      return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
     }
   },
   watch: {
