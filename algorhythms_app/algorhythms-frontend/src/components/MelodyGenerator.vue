@@ -61,7 +61,7 @@
 
 <script>
 import * as Tone from 'tone'
-import './MelodyGenerator.css'
+import '../style/MelodyGenerator.css'
 
 export default {
   name: 'MelodyGenerator',
