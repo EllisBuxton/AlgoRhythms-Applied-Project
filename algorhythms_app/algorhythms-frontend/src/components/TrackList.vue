@@ -109,6 +109,7 @@ export default {
     addTrack(event) {
       // Prevent event propagation
       event.stopPropagation();
+      event.preventDefault();
       
       const newTrackNumber = this.tracks.length + 1;
       this.tracks.push({
@@ -124,6 +125,7 @@ export default {
     removeTrack(event) {
       // Prevent event propagation
       event.stopPropagation();
+      event.preventDefault();
       
       if (this.tracks.length > 1) {
         this.tracks.pop();

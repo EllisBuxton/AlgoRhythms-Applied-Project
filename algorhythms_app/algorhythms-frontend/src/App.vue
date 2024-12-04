@@ -34,12 +34,14 @@ export default {
   data() {
     return {
       currentTime: 0,
-      wasPlaying: false
+      wasPlaying: false,
+      isPlaying: false
     }
   },
   methods: {
     handlePlaybackChange(isPlaying) {
       console.log('Playback state:', isPlaying);
+      this.isPlaying = isPlaying;
     },
     handleBpmChange(bpm) {
       console.log('New BPM:', bpm);
@@ -51,7 +53,9 @@ export default {
       console.log(`Track ${index + 1} muted:`, muted);
     },
     handleTimeUpdate(time) {
-      this.currentTime = time;
+      if (this.isPlaying) {
+        this.currentTime = time;
+      }
     },
     handlePlayheadMoved(time) {
       this.currentTime = time;
