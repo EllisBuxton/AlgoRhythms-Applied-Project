@@ -15,6 +15,7 @@
                   'black-key': note.isBlack,
                   'white-key': !note.isBlack
                 }"
+                @mousedown="playNote(note)"
               >
                 <span class="note-label">{{ note.label }}</span>
               </div>
@@ -46,6 +47,10 @@ export default {
     show: {
       type: Boolean,
       required: true
+    },
+    onNotePlay: {
+      type: Function,
+      required: true
     }
   },
   data() {
@@ -54,12 +59,12 @@ export default {
     }
   },
   created() {
-    // Generate notes from C0 to C10 (11 octaves)
+    // Generate notes from C1 to C8 (8 octaves)
     const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
     const notes = [];
     
-    // Start from MIDI note 0 (C-1) to MIDI note 127 (G9)
-    for (let midi = 0; midi <= 127; midi++) {
+    // Start from MIDI note 12 (C1) to MIDI note 108 (B8)
+    for (let midi = 12; midi <= 108; midi++) {
       const octave = Math.floor(midi / 12) - 1;
       const noteIndex = midi % 12;
       const noteName = noteNames[noteIndex];
@@ -72,7 +77,6 @@ export default {
       });
     }
     
-    // Reverse the array so higher notes are at the top
     this.notes = notes.reverse();
   },
   watch: {
@@ -93,6 +97,9 @@ export default {
   methods: {
     close() {
       this.$emit('close');
+    },
+    playNote(note) {
+      this.onNotePlay(note.midi);
     }
   }
 }

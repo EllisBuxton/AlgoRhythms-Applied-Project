@@ -31,6 +31,7 @@
 
     <piano-roll-popup 
       :show="showPianoPopup"
+      :onNotePlay="playMidiNote"
       @close="closePianoPopup"
     />
   </div>
@@ -112,13 +113,18 @@ export default {
     closePianoPopup() {
       this.showPianoPopup = false;
     },
+    async playMidiNote(midiNote) {
+      try {
+        await Tone.start();
+        const synth = new Tone.Synth().toDestination();
+        const freq = Tone.Frequency(midiNote, "midi");
+        synth.triggerAttackRelease(freq, "8n");
+      } catch (error) {
+        console.error('Error playing note:', error);
+      }
+    },
     async playTestNote() {
-      // Create and connect a synth
-      const synth = new Tone.Synth().toDestination();
-      
-      // Play C5 (MIDI note 72)
-      await Tone.start();
-      synth.triggerAttackRelease("C5", "8n");
+      await this.playMidiNote(72); // C5 is MIDI note 72
     }
   },
   watch: {
