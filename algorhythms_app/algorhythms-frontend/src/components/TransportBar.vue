@@ -1,5 +1,6 @@
 <template>
   <div class="transport-bar">
+    <synth-engine ref="synthEngine" />
     <button class="transport-button piano-button" @click="togglePianoPopup">🎹</button>
     <button class="transport-button test-note-button" @click="playTestNote">🎵</button>
     <div class="centered-controls">
@@ -42,23 +43,16 @@
 <script>
 import '../style/TransportBar.css'
 import PianoRollPopup from './PianoRollPopup.vue'
+import SynthEngine from './SynthEngine.vue'
 import * as Tone from 'tone'
-
-let polySynth = null;
 
 export default {
   name: 'TransportBar',
   components: {
-    PianoRollPopup
-  },
-  created() {
-    // Initialize polySynth once
-    polySynth = new Tone.PolySynth(Tone.Synth).toDestination();
+    PianoRollPopup,
+    SynthEngine
   },
   beforeUnmount() {
-    if (polySynth) {
-      polySynth.dispose();
-    }
     this.pauseTimer();
   },
   props: {
@@ -128,78 +122,14 @@ export default {
       this.showPianoPopup = false;
     },
     async playMidiNote(midiNote, instrument = 'piano') {
-      try {
-        // Ensure audio context is started
-        await Tone.start();
-        
-        const now = Tone.now();
-        
-        // Update synth settings based on instrument
-        polySynth.set({
-          oscillator: {
-            type: this.getOscillatorType(instrument)
-          },
-          envelope: this.getEnvelopeSettings(instrument),
-          volume: -6
-        });
-        
-        const freq = Tone.Frequency(midiNote, "midi");
-        await polySynth.triggerAttackRelease(freq, "8n", now);
-      } catch (error) {
-        console.error('Error playing note:', error);
-      }
-    },
-    getOscillatorType(instrument) {
-      switch (instrument) {
-        case 'sawtooth':
-          return 'sawtooth';
-        case 'brass':
-          return 'square';
-        case 'strings':
-          return 'sine';
-        default: // piano
-          return 'triangle';
-      }
-    },
-    getEnvelopeSettings(instrument) {
-      switch (instrument) {
-        case 'sawtooth':
-          return {
-            attack: 0.05,
-            decay: 0.2,
-            sustain: 0.5,
-            release: 1
-          };
-        case 'brass':
-          return {
-            attack: 0.1,
-            decay: 0.3,
-            sustain: 0.6,
-            release: 0.8
-          };
-        case 'strings':
-          return {
-            attack: 0.2,
-            decay: 0.3,
-            sustain: 0.8,
-            release: 1.5
-          };
-        default: // piano
-          return {
-            attack: 0.005,
-            decay: 0.1,
-            sustain: 0.3,
-            release: 1
-          };
-      }
+      await this.$refs.synthEngine.playNote(midiNote, instrument);
     },
     async playTestNote() {
       try {
-        // Add a user interaction check
         if (Tone.context.state !== 'running') {
           await Tone.start();
         }
-        await this.playMidiNote(72, 'piano'); // C5 is MIDI note 72
+        await this.playMidiNote(72, 'piano');
       } catch (error) {
         console.error('Error playing test note:', error);
       }
