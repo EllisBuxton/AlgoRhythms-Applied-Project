@@ -39,12 +39,15 @@
       </div>
     </div>
     <div class="track-buttons">
-      <button class="add-track-button" @click="addTrack">
+      <button 
+        class="add-track-button" 
+        @click.stop="addTrack"
+      >
         + Add Track
       </button>
       <button 
         class="remove-track-button" 
-        @click="removeTrack"
+        @click.stop="removeTrack"
         :disabled="tracks.length <= 1"
       >
         - Remove Track
@@ -103,7 +106,10 @@ export default {
       this.selectedTrack = index;
       this.$emit('track-selected', index);
     },
-    addTrack() {
+    addTrack(event) {
+      // Prevent event propagation
+      event.stopPropagation();
+      
       const newTrackNumber = this.tracks.length + 1;
       this.tracks.push({
         name: `Track ${newTrackNumber}`,
@@ -115,7 +121,10 @@ export default {
       this.tracks[index].muted = !this.tracks[index].muted;
       this.$emit('track-muted', { index, muted: this.tracks[index].muted });
     },
-    removeTrack() {
+    removeTrack(event) {
+      // Prevent event propagation
+      event.stopPropagation();
+      
       if (this.tracks.length > 1) {
         this.tracks.pop();
         if (this.selectedTrack >= this.tracks.length) {
