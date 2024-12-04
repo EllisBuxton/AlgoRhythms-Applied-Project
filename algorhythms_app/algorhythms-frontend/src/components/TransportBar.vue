@@ -1,28 +1,31 @@
 <template>
   <div class="transport-bar">
-    <div class="transport-controls">
-      <button class="transport-button" @click="togglePlayPause">
-        <span v-if="!isPlaying">▶</span>
-        <span v-else>⏸</span>
-      </button>
-      <button class="transport-button" @click="stop">⏹</button>
-    </div>
-    
-    <div class="time-display">
-      {{ formatTime(currentTime) }}
-    </div>
-    
-    <div class="tempo-control">
-      <label for="bpm">BPM:</label>
-      <input 
-        type="range" 
-        id="bpm" 
-        v-model="bpm" 
-        min="60" 
-        max="200" 
-        step="1"
-      >
-      <span class="bpm-value">{{ bpm }}</span>
+    <button class="transport-button piano-button">🎹</button>
+    <div class="centered-controls">
+      <div class="transport-controls">
+        <button class="transport-button" @click="togglePlayPause">
+          <span v-if="!isPlaying">▶</span>
+          <span v-else>⏸</span>
+        </button>
+        <button class="transport-button" @click="stop">⏹</button>
+      </div>
+      
+      <div class="time-display">
+        {{ formatTime(currentTime) }}
+      </div>
+      
+      <div class="tempo-control">
+        <label for="bpm">BPM:</label>
+        <input 
+          type="range" 
+          id="bpm" 
+          v-model="bpm" 
+          min="60" 
+          max="200" 
+          step="1"
+        >
+        <span class="bpm-value">{{ bpm }}</span>
+      </div>
     </div>
   </div>
 </template>
