@@ -3,19 +3,31 @@
     <div 
       v-for="(track, index) in tracks" 
       :key="index"
-      class="track-item"
-      :class="{ active: selectedTrack === index, muted: track.muted }"
-      @click="selectTrack(index)"
+      class="track-container"
     >
-      <span class="track-icon">🎵</span>
-      <span class="track-name">{{ track.name }}</span>
-      <button 
-        class="mute-button"
-        :class="{ muted: track.muted }"
-        @click.stop="toggleMute(index)"
+      <div 
+        class="track-item"
+        :class="{ active: selectedTrack === index, muted: track.muted }"
+        @click="selectTrack(index)"
       >
-        {{ track.muted ? '🔇' : '🔊' }}
-      </button>
+        <span class="track-icon">🎵</span>
+        <span class="track-name">{{ track.name }}</span>
+        <button 
+          class="mute-button"
+          :class="{ muted: track.muted }"
+          @click.stop="toggleMute(index)"
+        >
+          {{ track.muted ? '🔇' : '🔊' }}
+        </button>
+      </div>
+      <div class="timeline">
+        <div class="timeline-notches">
+          <div v-for="second in 60" :key="second" class="notch-container">
+            <div class="notch"></div>
+            <span v-if="second % 5 === 0" class="time-label">{{ second }}s</span>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="track-buttons">
       <button class="add-track-button" @click="addTrack">
