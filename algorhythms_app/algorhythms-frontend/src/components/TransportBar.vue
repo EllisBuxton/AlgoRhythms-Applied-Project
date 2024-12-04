@@ -44,10 +44,22 @@ import '../style/TransportBar.css'
 import PianoRollPopup from './PianoRollPopup.vue'
 import * as Tone from 'tone'
 
+let polySynth = null;
+
 export default {
   name: 'TransportBar',
   components: {
     PianoRollPopup
+  },
+  created() {
+    // Initialize polySynth once
+    polySynth = new Tone.PolySynth(Tone.Synth).toDestination();
+  },
+  beforeUnmount() {
+    if (polySynth) {
+      polySynth.dispose();
+    }
+    this.pauseTimer();
   },
   props: {
     currentTime: {
@@ -115,18 +127,82 @@ export default {
     closePianoPopup() {
       this.showPianoPopup = false;
     },
-    async playMidiNote(midiNote) {
+    async playMidiNote(midiNote, instrument = 'piano') {
       try {
+        // Ensure audio context is started
         await Tone.start();
-        const synth = new Tone.Synth().toDestination();
+        
+        const now = Tone.now();
+        
+        // Update synth settings based on instrument
+        polySynth.set({
+          oscillator: {
+            type: this.getOscillatorType(instrument)
+          },
+          envelope: this.getEnvelopeSettings(instrument),
+          volume: -6
+        });
+        
         const freq = Tone.Frequency(midiNote, "midi");
-        synth.triggerAttackRelease(freq, "8n");
+        await polySynth.triggerAttackRelease(freq, "8n", now);
       } catch (error) {
         console.error('Error playing note:', error);
       }
     },
+    getOscillatorType(instrument) {
+      switch (instrument) {
+        case 'sawtooth':
+          return 'sawtooth';
+        case 'brass':
+          return 'square';
+        case 'strings':
+          return 'sine';
+        default: // piano
+          return 'triangle';
+      }
+    },
+    getEnvelopeSettings(instrument) {
+      switch (instrument) {
+        case 'sawtooth':
+          return {
+            attack: 0.05,
+            decay: 0.2,
+            sustain: 0.5,
+            release: 1
+          };
+        case 'brass':
+          return {
+            attack: 0.1,
+            decay: 0.3,
+            sustain: 0.6,
+            release: 0.8
+          };
+        case 'strings':
+          return {
+            attack: 0.2,
+            decay: 0.3,
+            sustain: 0.8,
+            release: 1.5
+          };
+        default: // piano
+          return {
+            attack: 0.005,
+            decay: 0.1,
+            sustain: 0.3,
+            release: 1
+          };
+      }
+    },
     async playTestNote() {
-      await this.playMidiNote(72); // C5 is MIDI note 72
+      try {
+        // Add a user interaction check
+        if (Tone.context.state !== 'running') {
+          await Tone.start();
+        }
+        await this.playMidiNote(72, 'piano'); // C5 is MIDI note 72
+      } catch (error) {
+        console.error('Error playing test note:', error);
+      }
     },
     handleBpmChange() {
       this.$emit('bpm-changed', this.bpm);
@@ -136,9 +212,6 @@ export default {
     bpm(newValue) {
       this.$emit('bpm-changed', newValue);
     }
-  },
-  beforeUnmount() {
-    this.pauseTimer();
   }
 }
 </script> 
