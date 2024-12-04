@@ -231,23 +231,38 @@ export default {
 }
 
 .note-block {
-  background-color: rgba(76, 175, 80, 0.8);
+  background-color: rgba(76, 175, 80, 0.9);
   border: 1px solid rgba(76, 175, 80, 1);
   border-radius: 4px;
-  height: 80%;
+  height: 90%;
+  width: 90%;
   margin: auto;
   transition: all 0.2s ease;
-}
-
-.note-block.playing {
-  background-color: rgba(76, 175, 80, 1);
-  box-shadow: 0 0 15px rgba(76, 175, 80, 0.8);
-  transform: scale(1.05);
+  box-shadow: 
+    inset 0 1px 1px rgba(255, 255, 255, 0.3),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.3),
+    2px 2px 4px rgba(0, 0, 0, 0.2);
+  position: relative;
+  top: 5%;
 }
 
 .note-block:hover {
   background-color: rgba(76, 175, 80, 1);
-  transform: scale(1.02);
+  transform: scale(1.02) translateY(-1px);
+  box-shadow: 
+    inset 0 1px 1px rgba(255, 255, 255, 0.3),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.3),
+    2px 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.note-block.playing {
+  background-color: rgba(76, 175, 80, 1);
+  transform: scale(1.05) translateY(-2px);
+  box-shadow: 
+    inset 0 1px 1px rgba(255, 255, 255, 0.4),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.3),
+    0 0 15px rgba(76, 175, 80, 0.8),
+    2px 6px 8px rgba(0, 0, 0, 0.4);
 }
 
 .grid-cell {
