@@ -40,12 +40,14 @@
                     v-for="cell in 128" 
                     :key="cell"
                     class="grid-cell"
+                    :class="{ 'current-beat': currentPlaybackCell === cell }"
                     @click="toggleNote(note.midi, cell)"
                     @contextmenu.prevent="removeNote(note.midi, cell)"
                   >
                     <div 
                       v-if="hasNote(note.midi, cell)" 
                       class="note-block"
+                      :class="{ 'playing': isNotePlaying(note.midi, cell) }"
                     ></div>
                   </div>
                 </div>
@@ -82,7 +84,9 @@ export default {
       notes: [],
       placedNotes: new Map(),
       isPlaying: false,
-      currentPlaybackTime: 0
+      currentPlaybackTime: 0,
+      currentlyPlayingNotes: new Set(),
+      currentPlaybackCell: null
     }
   },
   created() {
@@ -154,26 +158,43 @@ export default {
       const beatDuration = 60000 / this.bpm;
       const gridCellDuration = beatDuration / 4;
       
-      // Get all placed notes and sort them by time (cell index)
-      const sortedNotes = Array.from(this.placedNotes.keys())
-        .map(key => {
-          const [midi, cell] = key.split('-').map(Number);
-          return { midi, time: cell * gridCellDuration };
-        })
-        .sort((a, b) => a.time - b.time);
-
-      // Play each note at its scheduled time
-      const startTime = performance.now();
+      // Reset playback position
+      this.currentPlaybackCell = 0;
       
-      for (const note of sortedNotes) {
-        const waitTime = note.time;
-        await new Promise(resolve => setTimeout(resolve, waitTime - (performance.now() - startTime)));
-        this.onNotePlay(note.midi);
+      // Get max cell index to know how long to play
+      const maxCell = Math.max(...Array.from(this.placedNotes.keys())
+        .map(key => parseInt(key.split('-')[1])), 16);  // minimum 16 cells
+      
+      // Play through all cells, even empty ones
+      for (let cell = 0; cell <= maxCell; cell++) {
+        this.currentPlaybackCell = cell;
+        
+        // Find and play notes in current cell
+        const currentNotes = Array.from(this.placedNotes.keys())
+          .filter(key => parseInt(key.split('-')[1]) === cell)
+          .map(key => parseInt(key.split('-')[0]));
+        
+        for (const midiNote of currentNotes) {
+          const noteKey = `${midiNote}-${cell}`;
+          this.currentlyPlayingNotes.add(noteKey);
+          this.onNotePlay(midiNote);
+          
+          setTimeout(() => {
+            this.currentlyPlayingNotes.delete(noteKey);
+          }, 200);
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, gridCellDuration));
       }
 
-      // Wait a bit after the last note before enabling the play button again
+      // Reset at end
       await new Promise(resolve => setTimeout(resolve, 500));
       this.isPlaying = false;
+      this.currentlyPlayingNotes.clear();
+      this.currentPlaybackCell = null;
+    },
+    isNotePlaying(midiNote, cellIndex) {
+      return this.currentlyPlayingNotes.has(`${midiNote}-${cellIndex}`);
     }
   }
 }
@@ -207,5 +228,37 @@ export default {
   background-color: #666;
   cursor: not-allowed;
   opacity: 0.7;
+}
+
+.note-block {
+  background-color: rgba(76, 175, 80, 0.8);
+  border: 1px solid rgba(76, 175, 80, 1);
+  border-radius: 4px;
+  height: 80%;
+  margin: auto;
+  transition: all 0.2s ease;
+}
+
+.note-block.playing {
+  background-color: rgba(76, 175, 80, 1);
+  box-shadow: 0 0 15px rgba(76, 175, 80, 0.8);
+  transform: scale(1.05);
+}
+
+.note-block:hover {
+  background-color: rgba(76, 175, 80, 1);
+  transform: scale(1.02);
+}
+
+.grid-cell {
+  height: 100%;
+  border-right: 1px solid #2a2a2a;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+  position: relative;
+}
+
+.grid-cell.current-beat {
+  background-color: rgba(137, 74, 182, 0.15);
 }
 </style>
