@@ -1,6 +1,6 @@
 <template>
   <div class="transport-bar">
-    <button class="transport-button piano-button">🎹</button>
+    <button class="transport-button piano-button" @click="togglePianoPopup">🎹</button>
     <div class="centered-controls">
       <div class="transport-controls">
         <button class="transport-button" @click="togglePlayPause">
@@ -27,14 +27,23 @@
         <span class="bpm-value">{{ bpm }}</span>
       </div>
     </div>
+
+    <piano-roll-popup 
+      :show="showPianoPopup"
+      @close="closePianoPopup"
+    />
   </div>
 </template>
 
 <script>
 import '../style/TransportBar.css'
+import PianoRollPopup from './PianoRollPopup.vue'
 
 export default {
   name: 'TransportBar',
+  components: {
+    PianoRollPopup
+  },
   props: {
     currentTime: {
       type: Number,
@@ -46,7 +55,8 @@ export default {
       isPlaying: false,
       bpm: 120,
       timer: null,
-      lastTimestamp: null
+      lastTimestamp: null,
+      showPianoPopup: false
     }
   },
   methods: {
@@ -93,6 +103,12 @@ export default {
       const seconds = Math.floor(time % 60);
       const milliseconds = Math.floor((time % 1) * 1000);
       return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
+    },
+    togglePianoPopup() {
+      this.showPianoPopup = !this.showPianoPopup;
+    },
+    closePianoPopup() {
+      this.showPianoPopup = false;
     }
   },
   watch: {
