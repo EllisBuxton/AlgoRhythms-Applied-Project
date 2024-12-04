@@ -32,12 +32,18 @@ import '../style/TransportBar.css'
 
 export default {
   name: 'TransportBar',
+  props: {
+    currentTime: {
+      type: Number,
+      default: 0
+    }
+  },
   data() {
     return {
       isPlaying: false,
-      currentTime: 0,
       bpm: 120,
-      timer: null
+      timer: null,
+      lastTimestamp: null
     }
   },
   methods: {
@@ -52,19 +58,32 @@ export default {
     },
     stop() {
       this.isPlaying = false;
-      this.currentTime = 0;
+      this.lastTimestamp = null;
+      this.$emit('time-updated', 0);
       this.pauseTimer();
       this.$emit('playback-changed', false);
     },
     startTimer() {
-      this.timer = setInterval(() => {
-        this.currentTime += 0.01;
-      }, 10);
+      this.pauseTimer(); // Clear any existing timer
+      this.lastTimestamp = performance.now();
+      
+      const tick = () => {
+        const now = performance.now();
+        const delta = (now - this.lastTimestamp) / 1000; // Convert to seconds
+        this.lastTimestamp = now;
+        
+        this.$emit('time-updated', this.currentTime + delta);
+        this.timer = requestAnimationFrame(tick);
+      };
+      
+      this.timer = requestAnimationFrame(tick);
     },
     pauseTimer() {
       if (this.timer) {
-        clearInterval(this.timer);
+        cancelAnimationFrame(this.timer);
+        this.timer = null;
       }
+      this.lastTimestamp = null;
     },
     formatTime(time) {
       const minutes = Math.floor(time / 60);

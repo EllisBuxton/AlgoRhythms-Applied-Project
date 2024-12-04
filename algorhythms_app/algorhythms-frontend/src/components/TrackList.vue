@@ -1,6 +1,15 @@
 <template>
   <div class="track-list">
     <div 
+      class="playhead-container"
+      :style="{ left: `${playheadPosition}px` }"
+      @mousedown="startDragging"
+      @touchstart="startDragging"
+    >
+      <div class="playhead-line"></div>
+      <div class="playhead-handle"></div>
+    </div>
+    <div 
       v-for="(track, index) in tracks" 
       :key="index"
       class="track-container"
@@ -49,6 +58,12 @@ import '../style/TrackList.css'
 
 export default {
   name: 'TrackList',
+  props: {
+    currentTime: {
+      type: Number,
+      default: 0
+    }
+  },
   data() {
     return {
       tracks: [
@@ -56,8 +71,32 @@ export default {
         { name: 'Track 2', instrument: 'piano', muted: false },
         { name: 'Track 3', instrument: 'piano', muted: false }
       ],
-      selectedTrack: 0
+      selectedTrack: 0,
+      playheadPosition: 250,
+      isDragging: false,
+      startX: 0,
+      startPos: 0
     }
+  },
+  watch: {
+    currentTime(newTime) {
+      if (!this.isDragging) {
+        // Each notch is 30px apart, and each second is one notch
+        this.playheadPosition = 250 + (newTime * 30) - 15; // Subtract 15px to center on notches
+      }
+    }
+  },
+  mounted() {
+    window.addEventListener('mousemove', this.onDrag);
+    window.addEventListener('mouseup', this.stopDragging);
+    window.addEventListener('touchmove', this.onDrag);
+    window.addEventListener('touchend', this.stopDragging);
+  },
+  beforeUnmount() {
+    window.removeEventListener('mousemove', this.onDrag);
+    window.removeEventListener('mouseup', this.stopDragging);
+    window.removeEventListener('touchmove', this.onDrag);
+    window.removeEventListener('touchend', this.stopDragging);
   },
   methods: {
     selectTrack(index) {
@@ -84,6 +123,35 @@ export default {
           this.$emit('track-selected', this.selectedTrack);
         }
       }
+    },
+    startDragging(event) {
+      this.isDragging = true;
+      this.startX = event.type === 'mousedown' ? event.clientX : event.touches[0].clientX;
+      this.startPos = this.playheadPosition;
+      this.$emit('drag-started');
+    },
+    onDrag(event) {
+      if (!this.isDragging) return;
+      
+      const currentX = event.type === 'mousemove' ? event.clientX : event.touches[0].clientX;
+      const delta = currentX - this.startX;
+      
+      const trackList = document.querySelector('.track-list');
+      const minX = 250;
+      const maxX = trackList.offsetWidth;
+      
+      let newPosition = this.startPos + delta;
+      newPosition = Math.max(minX, Math.min(maxX, newPosition));
+      
+      this.playheadPosition = newPosition;
+      
+      // Adjust the time calculation to match the position
+      const timePosition = ((newPosition - 250 + 15) / 30); // Add 15px to compensate for centering
+      this.$emit('playhead-moved', timePosition);
+    },
+    stopDragging() {
+      this.isDragging = false;
+      this.$emit('drag-ended');
     }
   }
 }

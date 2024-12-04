@@ -1,12 +1,19 @@
 <template>
   <div id="app">
     <transport-bar 
+      :currentTime="currentTime"
       @playback-changed="handlePlaybackChange"
       @bpm-changed="handleBpmChange"
+      @time-updated="handleTimeUpdate"
+      ref="transportBar"
     />
     <track-list 
+      :currentTime="currentTime"
       @track-selected="handleTrackSelect"
       @track-muted="handleTrackMute"
+      @playhead-moved="handlePlayheadMoved"
+      @drag-started="handleDragStart"
+      @drag-ended="handleDragEnd"
     />
     <div class="main-content">
     </div>
@@ -24,6 +31,12 @@ export default {
     TransportBar,
     TrackList
   },
+  data() {
+    return {
+      currentTime: 0,
+      wasPlaying: false
+    }
+  },
   methods: {
     handlePlaybackChange(isPlaying) {
       console.log('Playback state:', isPlaying);
@@ -36,7 +49,23 @@ export default {
     },
     handleTrackMute({ index, muted }) {
       console.log(`Track ${index + 1} muted:`, muted);
-      // Add your mute logic here
+    },
+    handleTimeUpdate(time) {
+      this.currentTime = time;
+    },
+    handlePlayheadMoved(time) {
+      this.currentTime = time;
+    },
+    handleDragStart() {
+      this.wasPlaying = this.$refs.transportBar.isPlaying;
+      if (this.wasPlaying) {
+        this.$refs.transportBar.pauseTimer();
+      }
+    },
+    handleDragEnd() {
+      if (this.wasPlaying) {
+        this.$refs.transportBar.startTimer();
+      }
     }
   }
 }
