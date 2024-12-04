@@ -5,22 +5,30 @@
       <h2>Piano Roll</h2>
       <div class="piano-content">
         <div class="piano-roll-container">
-          <div class="piano-keys" ref="pianoKeys">
-            <div 
-              v-for="note in notes" 
-              :key="note.midi"
-              class="piano-key"
-              :class="{ 
-                'black-key': note.isBlack,
-                'white-key': !note.isBlack
-              }"
-            >
-              <span class="note-label">{{ note.label }}</span>
+          <div class="piano-roll-scroll-container" ref="scrollContainer">
+            <div class="piano-keys">
+              <div 
+                v-for="note in notes" 
+                :key="note.midi"
+                class="piano-key"
+                :class="{ 
+                  'black-key': note.isBlack,
+                  'white-key': !note.isBlack
+                }"
+              >
+                <span class="note-label">{{ note.label }}</span>
+              </div>
             </div>
-          </div>
-          <div class="grid-container">
-            <div class="grid">
-              <!-- Grid lines will be added via CSS -->
+            <div class="grid-container">
+              <div class="note-rows">
+                <div 
+                  v-for="note in notes" 
+                  :key="note.midi"
+                  class="note-row"
+                >
+                  <!-- Note placement will go here in future updates -->
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -70,15 +78,12 @@ export default {
   watch: {
     show(newValue) {
       if (newValue) {
-        // Wait for the next tick to ensure the DOM is updated and visible
         this.$nextTick(() => {
-          if (this.$refs.pianoKeys) {
-            // Find the index of C5 (MIDI note 72)
+          if (this.$refs.scrollContainer) {
             const c5Index = this.notes.findIndex(note => note.midi === 72);
             if (c5Index !== -1) {
-              // Calculate scroll position (30px per key)
               const scrollPosition = c5Index * 30;
-              this.$refs.pianoKeys.scrollTop = scrollPosition;
+              this.$refs.scrollContainer.scrollTop = scrollPosition;
             }
           }
         });

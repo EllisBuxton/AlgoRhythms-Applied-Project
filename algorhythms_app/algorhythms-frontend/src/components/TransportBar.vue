@@ -1,6 +1,7 @@
 <template>
   <div class="transport-bar">
     <button class="transport-button piano-button" @click="togglePianoPopup">🎹</button>
+    <button class="transport-button test-note-button" @click="playTestNote">🎵</button>
     <div class="centered-controls">
       <div class="transport-controls">
         <button class="transport-button" @click="togglePlayPause">
@@ -38,6 +39,7 @@
 <script>
 import '../style/TransportBar.css'
 import PianoRollPopup from './PianoRollPopup.vue'
+import * as Tone from 'tone'
 
 export default {
   name: 'TransportBar',
@@ -109,6 +111,14 @@ export default {
     },
     closePianoPopup() {
       this.showPianoPopup = false;
+    },
+    async playTestNote() {
+      // Create and connect a synth
+      const synth = new Tone.Synth().toDestination();
+      
+      // Play C5 (MIDI note 72)
+      await Tone.start();
+      synth.triggerAttackRelease("C5", "8n");
     }
   },
   watch: {
