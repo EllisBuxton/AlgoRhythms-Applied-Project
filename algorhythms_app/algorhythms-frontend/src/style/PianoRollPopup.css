@@ -1,6 +1,6 @@
 .piano-popup-overlay {
   position: fixed;
-  top: 0;
+  top: 85px;
   left: 0;
   right: 0;
   bottom: 0;
@@ -10,7 +10,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 2000;
+  z-index: 999;
 }
 
 .piano-popup {
@@ -20,7 +20,7 @@
   min-width: 800px;
   min-height: 500px;
   max-width: 90vw;
-  max-height: 90vh;
+  max-height: calc(90vh - 85px);
   position: relative;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
   border: 1px solid #3a3a3a;
@@ -158,7 +158,7 @@
 
 .note-rows {
   height: 100%;
-  width: 3600px;
+  width: 7680px;
   background-color: #1a1a1a;
   position: relative;
 }
@@ -167,8 +167,93 @@
   height: 30px;
   border-bottom: 1px solid #2a2a2a;
   position: relative;
+  display: grid;
+  grid-template-columns: repeat(128, 60px);
+}
+
+.grid-cell {
+  height: 100%;
+  border-right: 1px solid #2a2a2a;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+}
+
+.grid-cell:nth-child(4n+1) {
+  border-right: 1px solid #3a3a3a;
+}
+
+.grid-cell:hover {
+  background-color: rgba(137, 74, 182, 0.2);
 }
 
 .note-row:hover {
   background-color: rgba(137, 74, 182, 0.1);
+}
+
+.note-block {
+  background-color: rgba(76, 175, 80, 0.8);  /* Green color */
+  border: 1px solid rgba(76, 175, 80, 1);
+  border-radius: 4px;
+  height: 80%;
+  margin: auto;
+  transition: all 0.2s ease;
+}
+
+.note-block:hover {
+  background-color: rgba(76, 175, 80, 1);
+  transform: scale(1.02);
+}
+
+.controls {
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.play-button {
+  background-color: #894ab6;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.play-button:hover:not(:disabled) {
+  background-color: #6b3a91;
+  transform: scale(1.05);
+}
+
+.play-button:disabled {
+  background-color: #666;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.piano-roll-playhead {
+  position: absolute;
+  top: 0;
+  width: 2px;
+  height: 100%;
+  background-color: #894ab6;
+  box-shadow: 0 0 5px rgba(137, 74, 182, 0.5);
+  pointer-events: none;
+  transition: transform 0.1s linear;
+  z-index: 2;
+}
+
+.piano-roll-playhead::before {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid #894ab6;
 } 

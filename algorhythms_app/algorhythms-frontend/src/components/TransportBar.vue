@@ -20,10 +20,11 @@
         <input 
           type="range" 
           id="bpm" 
-          v-model="bpm" 
+          v-model.number="bpm"
           min="60" 
           max="200" 
           step="1"
+          @input="handleBpmChange"
         >
         <span class="bpm-value">{{ bpm }}</span>
       </div>
@@ -32,6 +33,7 @@
     <piano-roll-popup 
       :show="showPianoPopup"
       :onNotePlay="playMidiNote"
+      :bpm="bpm"
       @close="closePianoPopup"
     />
   </div>
@@ -125,6 +127,9 @@ export default {
     },
     async playTestNote() {
       await this.playMidiNote(72); // C5 is MIDI note 72
+    },
+    handleBpmChange() {
+      this.$emit('bpm-changed', this.bpm);
     }
   },
   watch: {
