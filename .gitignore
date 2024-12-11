@@ -188,3 +188,9 @@ pnpm-debug.log*
 # Build directories
 /algorhythms-frontend/dist/
 /algorhythms-frontend/node_modules/
+
+
+/algorhythms_app/data/midi_files/*
+/algorhythms_app/data/processed/*
+!algorhythms_app/data/midi_files/.gitkeep
+!algorhythms_app/data/processed/.gitkeep
