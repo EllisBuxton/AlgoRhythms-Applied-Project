@@ -8,19 +8,26 @@ def collate_music_sequences(batch):
     return torch.cat(batch, dim=0)
 
 class MusicDataset(Dataset):
-    def __init__(self, sequences: List[np.ndarray], sequence_length: int = 32):
-        self.sequences = sequences
-        self.sequence_length = sequence_length
-
+    def __init__(self, sequences):
+        """Initialize dataset with sequences."""
+        if isinstance(sequences, dict):
+            # If sequences is a dictionary, flatten it into a list
+            self.sequences = []
+            for instrument_sequences in sequences.values():
+                self.sequences.extend(instrument_sequences)
+        else:
+            # If sequences is already a list
+            self.sequences = sequences
+            
     def __len__(self):
+        """Return the number of sequences."""
         return len(self.sequences)
-
+    
     def __getitem__(self, idx):
-        sequence = self.sequences[idx]
-        # Ensure sequence is 3D: (batch_size, sequence_length, features)
-        if len(sequence.shape) == 2:
-            sequence = sequence.reshape(1, *sequence.shape)
-        return torch.FloatTensor(sequence)
+        """Get a sequence by index."""
+        if idx >= len(self.sequences):
+            raise IndexError(f"Index {idx} out of bounds for dataset with {len(self.sequences)} items")
+        return torch.FloatTensor(self.sequences[idx])
 
 def create_data_loader(
     sequences: List[np.ndarray],
