@@ -194,3 +194,11 @@ pnpm-debug.log*
 /algorhythms_app/data/processed/*
 !algorhythms_app/data/midi_files/.gitkeep
 !algorhythms_app/data/processed/.gitkeep
+
+# Model files and training data
+*.pth
+/algorhythms_app/models/saved_models/
+/algorhythms_app/models/vae_transformer_*/
+*.model
+*.pkl
+*.h5

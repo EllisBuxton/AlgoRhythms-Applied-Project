@@ -3,6 +3,30 @@
     <synth-engine ref="synthEngine" />
     <button class="transport-button piano-button" @click="togglePianoPopup">🎹</button>
     <button class="transport-button test-note-button" @click="playTestNote">🎵</button>
+    
+    <div class="saved-melodies-container">
+      <div class="saved-melodies-list" :class="{ 'show-melodies': showMelodies }">
+        <div 
+          v-for="(melody, index) in savedMelodies" 
+          :key="index"
+          class="saved-melody"
+          draggable="true"
+          @dragstart="handleDragStart($event, melody)"
+        >
+          <span class="melody-name">Melody {{ index + 1 }}</span>
+          <button class="play-melody-btn" @click="playMelody(melody)">▶</button>
+          <button class="delete-melody-btn" @click="deleteMelody(index)">×</button>
+        </div>
+      </div>
+      <button 
+        class="transport-button melodies-toggle" 
+        @click="toggleMelodies"
+        :class="{ active: showMelodies }"
+      >
+        📂 {{ savedMelodies.length }}
+      </button>
+    </div>
+
     <div class="centered-controls">
       <div class="transport-controls">
         <button class="transport-button" @click="togglePlayPause">
@@ -36,6 +60,20 @@
       :onNotePlay="playMidiNote"
       :bpm="bpm"
       @close="closePianoPopup"
+      @save-melody="saveMelody"
+    />
+
+    <track-list 
+      :currentTime="currentTime"
+      :isPlaying="isPlaying"
+      :bpm="bpm"
+      @track-selected="handleTrackSelect"
+      @track-muted="handleTrackMute"
+      @playhead-moved="handlePlayheadMoved"
+      @drag-started="handleDragStart"
+      @drag-ended="handleDragEnd"
+      @play-note="handlePlayNote"
+      ref="trackList"
     />
   </div>
 </template>
@@ -45,12 +83,14 @@ import '../style/TransportBar.css'
 import PianoRollPopup from './PianoRollPopup.vue'
 import SynthEngine from './SynthEngine.vue'
 import * as Tone from 'tone'
+import TrackList from './TrackList.vue'
 
 export default {
   name: 'TransportBar',
   components: {
     PianoRollPopup,
-    SynthEngine
+    SynthEngine,
+    TrackList
   },
   beforeUnmount() {
     this.pauseTimer();
@@ -67,13 +107,23 @@ export default {
       bpm: 120,
       timer: null,
       lastTimestamp: null,
-      showPianoPopup: false
+      showPianoPopup: false,
+      savedMelodies: [],
+      showMelodies: false
     }
   },
   methods: {
     togglePlayPause() {
       this.isPlaying = !this.isPlaying;
       if (this.isPlaying) {
+        // Reset all melody playback positions when starting
+        if (this.$refs.trackList) {
+          this.$refs.trackList.tracks.forEach(track => {
+            track.melodies.forEach(melody => {
+              melody.lastPlayedCell = -1;
+            });
+          });
+        }
         this.startTimer();
       } else {
         this.pauseTimer();
@@ -85,6 +135,14 @@ export default {
       this.lastTimestamp = null;
       this.$emit('time-updated', 0);
       this.pauseTimer();
+      // Reset all melody playback positions when stopping
+      if (this.$refs.trackList) {
+        this.$refs.trackList.tracks.forEach(track => {
+          track.melodies.forEach(melody => {
+            melody.lastPlayedCell = -1;
+          });
+        });
+      }
       this.$emit('playback-changed', false);
     },
     startTimer() {
@@ -136,6 +194,55 @@ export default {
     },
     handleBpmChange() {
       this.$emit('bpm-changed', this.bpm);
+    },
+    toggleMelodies() {
+      this.showMelodies = !this.showMelodies;
+    },
+    saveMelody(melody) {
+      this.savedMelodies.push(melody);
+      this.showMelodies = true; // Show the melodies list when saving
+    },
+    async playMelody(melody) {
+      if (this.isPlaying) return;
+      
+      this.isPlaying = true;
+      const beatDuration = 60000 / melody.bpm; // Duration of one beat in ms
+      const sixteenthNoteDuration = beatDuration / 4; // Duration of one grid cell
+      
+      try {
+        if (Tone.context.state !== 'running') {
+          await Tone.start();
+        }
+        
+        // Sort notes by cell position to play in order
+        const sortedNotes = melody.notes.sort((a, b) => a.cell - b.cell);
+        let lastCell = -1;
+        
+        for (const note of sortedNotes) {
+          // Calculate delay based on cell position
+          const cellDelay = note.cell - lastCell;
+          if (cellDelay > 0) {
+            await new Promise(resolve => setTimeout(resolve, cellDelay * sixteenthNoteDuration));
+          }
+          
+          await this.playMidiNote(note.midiNote, melody.instrument);
+          lastCell = note.cell;
+        }
+      } catch (error) {
+        console.error('Error playing melody:', error);
+      } finally {
+        this.isPlaying = false;
+      }
+    },
+    deleteMelody(index) {
+      this.savedMelodies.splice(index, 1);
+    },
+    handleDragStart(event, melody) {
+      event.dataTransfer.setData('application/json', JSON.stringify(melody));
+      event.dataTransfer.effectAllowed = 'copy';
+    },
+    handlePlayNote({ midiNote, instrument }) {
+      this.playMidiNote(midiNote, instrument);
     }
   },
   watch: {

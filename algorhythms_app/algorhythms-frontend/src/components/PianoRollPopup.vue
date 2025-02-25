@@ -1,6 +1,13 @@
 <template>
   <div v-if="show" class="piano-popup-overlay" @click="close">
-    <div class="piano-popup" @click.stop>
+    <div 
+      class="piano-popup" 
+      @click.stop
+      @dragenter.prevent="handleDragOver"
+      @dragover.prevent="handleDragOver"
+      @dragleave.prevent="handleDragLeave"
+      @drop.prevent="handleFileDrop"
+    >
       <button class="close-button" @click="close">×</button>
       <h2>Piano Roll</h2>
       <div class="controls">
@@ -28,11 +35,21 @@
         >
           🗑️ Clear All
         </button>
+        <button 
+          class="save-button" 
+          @click="saveMelody"
+          :disabled="placedNotes.size === 0"
+        >
+          💾 Save Melody
+        </button>
       </div>
       <div class="piano-content">
-        <div class="piano-roll-container">
+        <div 
+          class="piano-roll-container"
+          :class="{ 'drag-over': isDraggingOver }"
+        >
           <div class="piano-roll-scroll-container" ref="scrollContainer">
-            <div class="piano-keys">
+            <div class="piano-keys" ref="pianoKeys">
               <div 
                 v-for="note in notes" 
                 :key="note.midi"
@@ -46,7 +63,7 @@
                 <span class="note-label">{{ note.label }}</span>
               </div>
             </div>
-            <div class="grid-container">
+            <div class="grid-container" ref="gridContainer" @scroll="handleGridScroll">
               <div class="note-rows">
                 <div 
                   v-for="note in notes" 
@@ -80,6 +97,7 @@
 <script>
 import '../style/PianoRollPopup.css'
 import * as Tone from 'tone'
+import { Midi } from '@tonejs/midi'
 
 export default {
   name: 'PianoRollPopup',
@@ -105,7 +123,8 @@ export default {
       currentPlaybackTime: 0,
       currentlyPlayingNotes: new Set(),
       currentPlaybackCell: null,
-      selectedInstrument: 'piano'
+      selectedInstrument: 'piano',
+      isDraggingOver: false
     }
   },
   created() {
@@ -142,6 +161,18 @@ export default {
           }
         });
       }
+    }
+  },
+  mounted() {
+    this.$nextTick(() => {
+      if (this.$refs.gridContainer) {
+        this.$refs.gridContainer.addEventListener('scroll', this.handleGridScroll);
+      }
+    });
+  },
+  beforeUnmount() {
+    if (this.$refs.gridContainer) {
+      this.$refs.gridContainer.removeEventListener('scroll', this.handleGridScroll);
     }
   },
   methods: {
@@ -234,6 +265,66 @@ export default {
     clearAllNotes() {
       this.placedNotes.clear();
       this.placedNotes = new Map(this.placedNotes);
+    },
+    handleDragLeave(event) {
+      event.preventDefault();
+      this.isDraggingOver = false;
+    },
+    handleDragOver(event) {
+      event.preventDefault();
+      this.isDraggingOver = true;
+    },
+    async handleFileDrop(event) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.isDraggingOver = false;
+
+      const file = event.dataTransfer.files[0];
+      if (!file || !file.name.toLowerCase().endsWith('.mid')) {
+        alert('Please drop a valid MIDI file');
+        return;
+      }
+
+      try {
+        const buffer = await file.arrayBuffer();
+        const midi = new Midi(buffer);
+        
+        this.clearAllNotes();
+        
+        midi.tracks.forEach(track => {
+          track.notes.forEach(note => {
+            const startTime = note.time * (this.bpm / 60) * 4;
+            const midiNote = note.midi;
+            const cellIndex = Math.floor(startTime);
+            
+            if (cellIndex < 128 && midiNote >= 21 && midiNote <= 108) {
+              this.toggleNote(midiNote, cellIndex);
+            }
+          });
+        });
+      } catch (error) {
+        console.error('Error processing MIDI file:', error);
+        alert('Unable to process this MIDI file');
+      }
+    },
+    saveMelody() {
+      // Convert placed notes to a serializable format
+      const melody = {
+        notes: Array.from(this.placedNotes.keys()).map(key => {
+          const [midiNote, cell] = key.split('-').map(Number);
+          return { midiNote, cell };
+        }),
+        instrument: this.selectedInstrument,
+        bpm: this.bpm
+      };
+      
+      // Emit save event to parent
+      this.$emit('save-melody', melody);
+    },
+    handleGridScroll(event) {
+      if (this.$refs.pianoKeys) {
+        this.$refs.pianoKeys.scrollTop = event.target.scrollTop;
+      }
     }
   }
 }
@@ -363,5 +454,60 @@ export default {
   background-color: #666;
   cursor: not-allowed;
   opacity: 0.7;
+}
+
+.save-button {
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.save-button:hover:not(:disabled) {
+  background-color: #1976D2;
+  transform: scale(1.05);
+}
+
+.save-button:disabled {
+  background-color: #666;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.piano-content {
+  height: 70vh;
+  overflow: hidden;
+}
+
+.piano-roll-container {
+  position: relative;
+  border: 2px dashed transparent;
+  transition: all 0.3s ease;
+  height: 100%;
+}
+
+.piano-roll-scroll-container {
+  height: 100%;
+  display: flex;
+  overflow: auto;
+}
+
+.piano-keys {
+  flex-shrink: 0;
+}
+
+.grid-container {
+  flex-grow: 1;
+  overflow: auto;
+}
+
+.piano-roll-container.drag-over {
+  border: 2px dashed #894ab6;
+  background-color: rgba(137, 74, 182, 0.1);
+  border-radius: 4px;
 }
 </style>

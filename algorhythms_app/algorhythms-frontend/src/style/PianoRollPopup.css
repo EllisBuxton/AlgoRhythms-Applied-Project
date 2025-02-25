@@ -24,6 +24,8 @@
   position: relative;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
   border: 1px solid #3a3a3a;
+  display: flex;
+  flex-direction: column;
 }
 
 .close-button {
@@ -52,46 +54,106 @@
 
 .piano-content {
   color: #e1bee7;
-  height: calc(100% - 60px);
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .piano-roll-container {
+  position: relative;
+  border: 2px dashed transparent;
+  transition: all 0.3s ease;
+  flex: 1;
   display: flex;
-  height: 400px;
+  flex-direction: column;
   background-color: #1a1a1a;
   border-radius: 4px;
   overflow: hidden;
 }
 
+.piano-roll-scroll-container {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
 .piano-keys {
+  flex-shrink: 0;
   width: 120px;
   background-color: #2a2a2a;
   border-right: 1px solid #3a3a3a;
+  overflow-y: scroll;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
-.piano-roll-scroll-container {
-  display: flex;
+.piano-keys::-webkit-scrollbar {
+  display: none;
+}
+
+.grid-container {
   flex: 1;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: #894ab6 #2a2a2a;
+  overflow: auto;
+  position: relative;
+  min-height: 0;
+  min-width: 0;
 }
 
-.piano-roll-scroll-container::-webkit-scrollbar {
-  width: 8px;
+.note-rows {
+  display: flex;
+  flex-direction: column;
+  width: 7680px; /* 128 cells * 60px per cell */
 }
 
-.piano-roll-scroll-container::-webkit-scrollbar-track {
+.note-row {
+  height: 30px;
+  display: flex;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.grid-cell {
+  flex: 0 0 60px; /* Increased from 30px to 60px */
+  height: 100%;
+  border-right: 1px solid #2a2a2a;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+  position: relative;
+}
+
+/* Add measure lines every 4 cells */
+.grid-cell:nth-child(4n) {
+  border-right: 2px solid #3a3a3a;
+}
+
+/* Add stronger measure lines every 16 cells */
+.grid-cell:nth-child(16n) {
+  border-right: 2px solid #894ab6;
+}
+
+/* Sync scrollbars styling */
+.grid-container::-webkit-scrollbar {
+  height: 12px;
+  width: 12px;
+}
+
+.grid-container::-webkit-scrollbar-track {
   background: #2a2a2a;
 }
 
-.piano-roll-scroll-container::-webkit-scrollbar-thumb {
+.grid-container::-webkit-scrollbar-thumb {
   background-color: #894ab6;
-  border-radius: 4px;
+  border-radius: 6px;
+  border: 3px solid #2a2a2a;
 }
 
-.piano-roll-scroll-container::-webkit-scrollbar-thumb:hover {
+.grid-container::-webkit-scrollbar-thumb:hover {
   background-color: #6b3a91;
+}
+
+.grid-container::-webkit-scrollbar-corner {
+  background-color: #2a2a2a;
 }
 
 .piano-key {
@@ -149,45 +211,6 @@
 .note-label {
   font-size: 14px;
   color: currentColor;
-}
-
-.grid-container {
-  flex: 1;
-  position: relative;
-}
-
-.note-rows {
-  height: 100%;
-  width: 7680px;
-  background-color: #1a1a1a;
-  position: relative;
-}
-
-.note-row {
-  height: 30px;
-  border-bottom: 1px solid #2a2a2a;
-  position: relative;
-  display: grid;
-  grid-template-columns: repeat(128, 60px);
-}
-
-.grid-cell {
-  height: 100%;
-  border-right: 1px solid #2a2a2a;
-  transition: background-color 0.2s ease;
-  cursor: pointer;
-}
-
-.grid-cell:nth-child(4n+1) {
-  border-right: 1px solid #3a3a3a;
-}
-
-.grid-cell:hover {
-  background-color: rgba(137, 74, 182, 0.2);
-}
-
-.note-row:hover {
-  background-color: rgba(137, 74, 182, 0.1);
 }
 
 .note-block {
