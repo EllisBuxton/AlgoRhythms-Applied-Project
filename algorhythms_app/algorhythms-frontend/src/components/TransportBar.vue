@@ -11,7 +11,7 @@
           :key="index"
           class="saved-melody"
           draggable="true"
-          @dragstart="handleDragStart($event, melody)"
+          @dragstart="handleMelodyDragStart($event, melody)"
         >
           <span class="melody-name">Melody {{ index + 1 }}</span>
           <button class="play-melody-btn" @click="playMelody(melody)">▶</button>
@@ -108,8 +108,9 @@ export default {
       timer: null,
       lastTimestamp: null,
       showPianoPopup: false,
-      savedMelodies: [],
-      showMelodies: false
+      savedMelodies: JSON.parse(localStorage.getItem('savedMelodies') || '[]'),
+      showMelodies: false,
+      wasPlaying: false
     }
   },
   methods: {
@@ -199,7 +200,12 @@ export default {
       this.showMelodies = !this.showMelodies;
     },
     saveMelody(melody) {
-      this.savedMelodies.push(melody);
+      // Add a unique ID to the melody
+      const melodyWithId = {
+        ...melody,
+        id: Date.now().toString()
+      };
+      this.savedMelodies.push(melodyWithId);
       this.showMelodies = true; // Show the melodies list when saving
     },
     async playMelody(melody) {
@@ -237,15 +243,43 @@ export default {
     deleteMelody(index) {
       this.savedMelodies.splice(index, 1);
     },
-    handleDragStart(event, melody) {
-      event.dataTransfer.setData('application/json', JSON.stringify(melody));
-      event.dataTransfer.effectAllowed = 'copy';
+    handleMelodyDragStart(event, melody) {
+      if (event && melody) {
+        event.dataTransfer.setData('application/json', JSON.stringify(melody));
+        event.dataTransfer.effectAllowed = 'copy';
+      }
+    },
+    handlePlayheadMoved(time) {
+      // Emit the time update instead of mutating the prop
+      this.$emit('time-updated', time);
+      
+      // If we were playing before dragging, continue playing from the new position
+      if (this.wasPlaying) {
+        this.lastTimestamp = performance.now();
+        this.startTimer();
+      }
+    },
+    handlePlayheadDragStart() {
+      this.wasPlaying = this.isPlaying;
+      if (this.wasPlaying) {
+        this.pauseTimer();
+      }
+    },
+    handlePlayheadDragEnd() {
+      // Don't restart the timer here, as it's handled in handlePlayheadMoved
+      this.wasPlaying = false;
     },
     handlePlayNote({ midiNote, instrument }) {
       this.playMidiNote(midiNote, instrument);
     }
   },
   watch: {
+    savedMelodies: {
+      handler(newMelodies) {
+        localStorage.setItem('savedMelodies', JSON.stringify(newMelodies));
+      },
+      deep: true
+    },
     bpm(newValue) {
       this.$emit('bpm-changed', newValue);
     }

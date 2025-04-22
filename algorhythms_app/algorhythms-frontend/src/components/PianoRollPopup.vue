@@ -71,7 +71,7 @@
                   class="note-row"
                 >
                   <div 
-                    v-for="cell in 128" 
+                    v-for="cell in 256" 
                     :key="cell"
                     class="grid-cell"
                     :class="{ 'current-beat': currentPlaybackCell === cell }"
@@ -291,17 +291,39 @@ export default {
         
         this.clearAllNotes();
         
-        midi.tracks.forEach(track => {
-          track.notes.forEach(note => {
-            const startTime = note.time * (this.bpm / 60) * 4;
-            const midiNote = note.midi;
-            const cellIndex = Math.floor(startTime);
-            
-            if (cellIndex < 128 && midiNote >= 21 && midiNote <= 108) {
-              this.toggleNote(midiNote, cellIndex);
-            }
-          });
+        // Find the track with the most notes (usually the melody track)
+        const mainTrack = midi.tracks.reduce((prev, current) => 
+          current.notes.length > prev.notes.length ? current : prev
+        );
+        
+        // Calculate the time per cell based on BPM
+        const beatDuration = 60 / this.bpm; // Duration of one beat in seconds
+        const sixteenthNoteDuration = beatDuration / 4; // Duration of one cell in seconds
+        
+        // Find the earliest and latest note times
+        const noteTimes = mainTrack.notes.map(note => note.time);
+        const earliestTime = Math.min(...noteTimes);
+        const latestTime = Math.max(...noteTimes);
+        
+        // Process each note
+        mainTrack.notes.forEach(note => {
+          // Calculate relative time from the start of the sequence
+          const relativeTime = note.time - earliestTime;
+          
+          // Convert time to cell index, ensuring we start from cell 0
+          const cellIndex = Math.floor(relativeTime / sixteenthNoteDuration);
+          
+          // Only add notes within our 256-cell range
+          if (cellIndex < 256) {
+            this.toggleNote(note.midi, cellIndex);
+          }
         });
+        
+        // If the melody is longer than 256 cells, show a message
+        const totalCells = Math.ceil((latestTime - earliestTime) / sixteenthNoteDuration);
+        if (totalCells > 256) {
+          console.log(`Note: The MIDI file contains ${totalCells} cells. Only the first 256 cells will be shown.`);
+        }
       } catch (error) {
         console.error('Error processing MIDI file:', error);
         alert('Unable to process this MIDI file');
@@ -397,10 +419,12 @@ export default {
 
 .grid-cell {
   height: 100%;
+  width: 20px;
   border-right: 1px solid #2a2a2a;
   transition: background-color 0.2s ease;
   cursor: pointer;
   position: relative;
+  flex-shrink: 0;
 }
 
 .grid-cell.current-beat {
@@ -481,6 +505,7 @@ export default {
 .piano-content {
   height: 70vh;
   overflow: hidden;
+  width: 100%;
 }
 
 .piano-roll-container {
@@ -488,21 +513,31 @@ export default {
   border: 2px dashed transparent;
   transition: all 0.3s ease;
   height: 100%;
+  width: 100%;
 }
 
 .piano-roll-scroll-container {
   height: 100%;
   display: flex;
   overflow: auto;
+  width: 100%;
 }
 
 .piano-keys {
   flex-shrink: 0;
+  width: 60px;
 }
 
 .grid-container {
   flex-grow: 1;
   overflow: auto;
+  width: calc(100% - 60px);
+}
+
+.note-row {
+  display: flex;
+  height: 30px;
+  min-width: 5120px; /* 256 cells * 20px per cell */
 }
 
 .piano-roll-container.drag-over {

@@ -12,8 +12,8 @@
       @track-selected="handleTrackSelect"
       @track-muted="handleTrackMute"
       @playhead-moved="handlePlayheadMoved"
-      @drag-started="handleDragStart"
-      @drag-ended="handleDragEnd"
+      @playhead-drag-started="handlePlayheadDragStart"
+      @playhead-drag-ended="handlePlayheadDragEnd"
     />
     <div class="main-content">
     </div>
@@ -60,16 +60,11 @@ export default {
     handlePlayheadMoved(time) {
       this.currentTime = time;
     },
-    handleDragStart() {
-      this.wasPlaying = this.$refs.transportBar.isPlaying;
-      if (this.wasPlaying) {
-        this.$refs.transportBar.pauseTimer();
-      }
+    handlePlayheadDragStart() {
+      this.$refs.transportBar.handlePlayheadDragStart();
     },
-    handleDragEnd() {
-      if (this.wasPlaying) {
-        this.$refs.transportBar.startTimer();
-      }
+    handlePlayheadDragEnd() {
+      this.$refs.transportBar.handlePlayheadDragEnd();
     }
   }
 }

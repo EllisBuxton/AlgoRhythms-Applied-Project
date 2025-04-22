@@ -47,6 +47,9 @@
               left: melody.startTime + 'px',
               width: calculateMelodyWidth(melody) + 'px'
             }"
+            draggable="true"
+            @dragstart="handleMelodyDragStart($event, index, mIndex)"
+            @dragend="handleMelodyDragEnd"
           >
             <div class="melody-block">
               <div class="melody-name">{{ melody.name || `Melody ${mIndex + 1}` }}</div>
@@ -114,7 +117,10 @@ export default {
       playheadPosition: 250,
       isDragging: false,
       startX: 0,
-      startPos: 0
+      startPos: 0,
+      isDraggingMelody: false,
+      draggedMelodyIndex: null,
+      draggedTrackIndex: null
     }
   },
   watch: {
@@ -122,6 +128,13 @@ export default {
       if (!this.isDragging) {
         this.playheadPosition = 250 + (newTime * 30) - 15;
         this.checkAndPlayMelodies(newTime);
+      }
+    },
+    isDragging(newValue) {
+      if (!newValue) {
+        // When dragging stops, update the currentTime based on the final position
+        const timePosition = ((this.playheadPosition - 250 + 15) / 30);
+        this.$emit('playhead-moved', timePosition);
       }
     }
   },
@@ -173,10 +186,12 @@ export default {
       }
     },
     startDragging(event) {
-      this.isDragging = true;
-      this.startX = event.type === 'mousedown' ? event.clientX : event.touches[0].clientX;
-      this.startPos = this.playheadPosition;
-      this.$emit('drag-started');
+      if (event) {
+        this.isDragging = true;
+        this.startX = event.type === 'mousedown' ? event.clientX : event.touches[0].clientX;
+        this.startPos = this.playheadPosition;
+        this.$emit('playhead-drag-started');
+      }
     },
     onDrag(event) {
       if (!this.isDragging) return;
@@ -193,13 +208,13 @@ export default {
       
       this.playheadPosition = newPosition;
       
-      // Adjust the time calculation to match the position
-      const timePosition = ((newPosition - 250 + 15) / 30); // Add 15px to compensate for centering
+      // Calculate and emit the new time position during dragging
+      const timePosition = ((newPosition - 250 + 15) / 30);
       this.$emit('playhead-moved', timePosition);
     },
     stopDragging() {
       this.isDragging = false;
-      this.$emit('drag-ended');
+      this.$emit('playhead-drag-ended');
     },
     handleDragOver(event) {
       event.preventDefault();
@@ -212,7 +227,16 @@ export default {
       try {
         const melodyData = JSON.parse(event.dataTransfer.getData('application/json'));
         const dropPosition = event.clientX - 250; // Adjust for the track label width
-        const startTime = Math.max(0, dropPosition);
+        
+        // Find the last melody in the track
+        const lastMelody = this.tracks[index].melodies.length > 0 
+          ? this.tracks[index].melodies[this.tracks[index].melodies.length - 1] 
+          : null;
+        
+        // Calculate start time based on the last melody's end position
+        const startTime = lastMelody 
+          ? lastMelody.startTime + this.calculateMelodyWidth(lastMelody)
+          : Math.max(0, dropPosition);
         
         this.tracks[index].melodies.push({
           ...melodyData,
@@ -241,7 +265,8 @@ export default {
           // Calculate which cell should be playing at current time
           const currentCell = Math.floor((timeInMs - melodyStartTime) / cellDuration);
           
-          if (currentCell >= 0 && currentCell < 128 && currentCell !== melody.lastPlayedCell) {
+          // Remove the cell range check to allow all notes to play
+          if (currentCell >= 0 && currentCell !== melody.lastPlayedCell) {
             // Find notes that should play in this cell
             const notesToPlay = melody.notes.filter(note => note.cell === currentCell);
             
@@ -271,6 +296,39 @@ export default {
     },
     calculateLastCell(melody) {
       return Math.max(...melody.notes.map(note => note.cell), 0);
+    },
+    handleMelodyDragStart(event, trackIndex, melodyIndex) {
+      this.isDraggingMelody = true;
+      this.draggedTrackIndex = trackIndex;
+      this.draggedMelodyIndex = melodyIndex;
+      event.dataTransfer.setData('text/plain', ''); // Required for drag to work
+      event.dataTransfer.effectAllowed = 'move';
+    },
+    
+    handleMelodyDragEnd(event) {
+      if (!this.isDraggingMelody) return;
+      
+      // Check if the melody was dragged outside the track area
+      const trackList = document.querySelector('.track-list');
+      const rect = trackList.getBoundingClientRect();
+      
+      if (
+        event.clientX < rect.left ||
+        event.clientX > rect.right ||
+        event.clientY < rect.top ||
+        event.clientY > rect.bottom
+      ) {
+        // Remove the melody if it was dragged outside
+        this.tracks[this.draggedTrackIndex].melodies.splice(this.draggedMelodyIndex, 1);
+        this.$emit('melody-removed', { 
+          trackIndex: this.draggedTrackIndex, 
+          melodyIndex: this.draggedMelodyIndex 
+        });
+      }
+      
+      this.isDraggingMelody = false;
+      this.draggedTrackIndex = null;
+      this.draggedMelodyIndex = null;
     }
   }
 }
