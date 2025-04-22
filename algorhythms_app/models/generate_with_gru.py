@@ -11,6 +11,7 @@ from tqdm import tqdm
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from models.gru_model import GRUModel
+from utils.pop909_processor import POP909Processor
 
 def generate_midi_file(note_sequence, output_file='output.mid', 
                        instrument=0, velocity=80, duration=0.5, start_time=0.0,
@@ -60,6 +61,7 @@ def load_model(model_path):
     hidden_size = checkpoint['hidden_size']
     output_size = checkpoint['output_size']
     note_range = checkpoint['note_range']
+    chord_vocab_size = checkpoint['chord_vocab_size']
     
     # Create model
     model = GRUModel(input_size, hidden_size, output_size)
@@ -73,25 +75,34 @@ def load_model(model_path):
     
     return model, checkpoint
 
-def generate_random_seed(note_range, seq_length=16):
+def generate_random_seed(note_range, chord_vocab_size, seq_length=16):
     """Generate a random seed sequence within the trained note range"""
     min_note, max_note = 0, note_range[1] - note_range[0]  # Adjusted to 0-based index
     
     # Generate random sequence
     note_indices = np.random.randint(0, max_note + 1, size=seq_length)
     
-    # Convert to one-hot encoding
-    input_size = max_note + 1
-    seed = np.zeros((seq_length, input_size))
+    # Convert to one-hot encoding for notes
+    note_range_size = max_note + 1
+    note_onehot = np.zeros((seq_length, note_range_size))
     for i, note in enumerate(note_indices):
-        seed[i, note] = 1
-        
+        note_onehot[i, note] = 1
+    
+    # Generate random chord context
+    chord_onehot = np.zeros((seq_length, chord_vocab_size))
+    for i in range(seq_length):
+        chord_idx = np.random.randint(0, chord_vocab_size)
+        chord_onehot[i, chord_idx] = 1
+    
+    # Combine note and chord information
+    seed = np.concatenate([note_onehot, chord_onehot], axis=1)
+    
     # Convert to actual MIDI notes for display
     midi_notes = [idx + note_range[0] for idx in note_indices]
     
     return torch.FloatTensor(seed), midi_notes
 
-def extract_real_seed_from_dataset(dataset_path, note_range, seq_length=16):
+def extract_real_seed_from_dataset(dataset_path, note_range, chord_vocab_size, seq_length=16):
     """Extract a real sequence from the dataset to use as a seed"""
     # Find MIDI files
     midi_files = []
@@ -102,7 +113,7 @@ def extract_real_seed_from_dataset(dataset_path, note_range, seq_length=16):
     
     if not midi_files:
         print(f"No MIDI files found in {dataset_path}, using random seed")
-        return generate_random_seed(note_range, seq_length)
+        return generate_random_seed(note_range, chord_vocab_size, seq_length)
     
     # Select a random MIDI file
     midi_file = random.choice(midi_files)
@@ -123,11 +134,41 @@ def extract_real_seed_from_dataset(dataset_path, note_range, seq_length=16):
                 adjusted_pitches = [max(0, min(pitch - note_range[0], note_range[1] - note_range[0])) 
                                    for pitch in pitches]
                 
-                # Create one-hot encoding
-                input_size = note_range[1] - note_range[0] + 1
-                seed = np.zeros((seq_length, input_size))
+                # Create one-hot encoding for notes
+                note_range_size = note_range[1] - note_range[0] + 1
+                note_onehot = np.zeros((seq_length, note_range_size))
                 for i, note_idx in enumerate(adjusted_pitches):
-                    seed[i, int(note_idx)] = 1
+                    note_onehot[i, int(note_idx)] = 1
+                
+                # Get chord context
+                song_dir = os.path.dirname(midi_file)
+                chord_file = os.path.join(song_dir, "chord_midi.txt")
+                chords = []
+                if os.path.exists(chord_file):
+                    with open(chord_file, 'r') as f:
+                        for line in f:
+                            start, end, chord = line.strip().split('\t')
+                            chords.append({
+                                'start': float(start),
+                                'end': float(end),
+                                'chord': chord
+                            })
+                
+                # Create one-hot encoding for chords
+                chord_onehot = np.zeros((seq_length, chord_vocab_size))
+                for i in range(seq_length):
+                    note_time = notes[start_idx + i].start
+                    current_chord = None
+                    for chord in chords:
+                        if chord['start'] <= note_time < chord['end']:
+                            current_chord = chord['chord']
+                            break
+                    if current_chord:
+                        chord_idx = hash(current_chord) % chord_vocab_size
+                        chord_onehot[i, chord_idx] = 1
+                
+                # Combine note and chord information
+                seed = np.concatenate([note_onehot, chord_onehot], axis=1)
                 
                 return torch.FloatTensor(seed), pitches
     except Exception as e:
@@ -135,7 +176,7 @@ def extract_real_seed_from_dataset(dataset_path, note_range, seq_length=16):
     
     # Fall back to random seed
     print("Falling back to random seed")
-    return generate_random_seed(note_range, seq_length)
+    return generate_random_seed(note_range, chord_vocab_size, seq_length)
 
 def generate_melody(model, seed_sequence, length=16, temperature=1.0):
     """Generate a melody using the trained model"""
@@ -184,9 +225,12 @@ def generate_melody(model, seed_sequence, length=16, temperature=1.0):
 
 def main():
     # Parameters
-    model_path = 'algorhythms_app/models/saved_models/gru_pop909.pth'
-    output_dir = 'algorhythms_app/data/generated'
-    dataset_path = 'algorhythms_app/POP909'
+    model_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 
+                             'models', 'saved_models', 'gru_pop909.pth')
+    output_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 
+                             'data', 'generated')
+    dataset_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 
+                               'POP909')
     melody_length = 64  # Number of notes to generate
     temperature = 0.8  # Lower for more conservative, higher for more random
     use_random_seed = False  # Use real seed from dataset if False
@@ -202,16 +246,17 @@ def main():
         # Get parameters
         note_range = checkpoint['note_range']
         sequence_length = checkpoint.get('sequence_length', 16)
+        chord_vocab_size = checkpoint.get('chord_vocab_size', 0)
         
-        print(f"Model parameters: Note range {note_range}, Sequence length {sequence_length}")
+        print(f"Model parameters: Note range {note_range}, Sequence length {sequence_length}, Chord vocab size {chord_vocab_size}")
         
         # Generate seed
         print("Generating seed sequence...")
         if use_random_seed:
-            seed_sequence, seed_notes = generate_random_seed(note_range, sequence_length)
+            seed_sequence, seed_notes = generate_random_seed(note_range, chord_vocab_size, sequence_length)
         else:
             seed_sequence, seed_notes = extract_real_seed_from_dataset(
-                dataset_path, note_range, sequence_length
+                dataset_path, note_range, chord_vocab_size, sequence_length
             )
         
         print(f"Seed notes: {seed_notes}")

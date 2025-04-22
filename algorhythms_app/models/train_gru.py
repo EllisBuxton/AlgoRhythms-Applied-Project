@@ -6,6 +6,7 @@ import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import sys
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 # Add the project root directory to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -17,8 +18,9 @@ from utils.pop909_processor import POP909Processor
 torch.manual_seed(42)
 
 def train_model(model, train_data, train_labels, val_data=None, val_labels=None, 
-                num_epochs=10, batch_size=64, learning_rate=0.001):
-    """Train the GRU model using GPU if available"""
+                num_epochs=50, batch_size=64, learning_rate=0.001, 
+                patience=5, min_lr=1e-6, grad_clip=1.0):
+    """Train the GRU model using GPU if available with enhanced training process"""
     # Move model to the appropriate device
     model.to_device()
     device = model.device
@@ -28,6 +30,12 @@ def train_model(model, train_data, train_labels, val_data=None, val_labels=None,
     
     criterion = nn.NLLLoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    
+    # Learning rate scheduler
+    scheduler = ReduceLROnPlateau(
+        optimizer, mode='min', factor=0.5, patience=patience//2,
+        min_lr=min_lr
+    )
     
     # Convert data to TensorDataset for batching
     train_dataset = torch.utils.data.TensorDataset(train_data, train_labels)
@@ -45,6 +53,8 @@ def train_model(model, train_data, train_labels, val_data=None, val_labels=None,
     
     train_losses = []
     val_losses = []
+    best_val_loss = float('inf')
+    patience_counter = 0
     
     # Training loop
     for epoch in range(num_epochs):
@@ -69,6 +79,10 @@ def train_model(model, train_data, train_labels, val_data=None, val_labels=None,
             
             # Backward pass and optimize
             loss.backward()
+            
+            # Gradient clipping
+            torch.nn.utils.clip_grad_norm_(model.parameters(), grad_clip)
+            
             optimizer.step()
             
             # Update statistics
@@ -95,7 +109,24 @@ def train_model(model, train_data, train_labels, val_data=None, val_labels=None,
                 avg_val_loss = total_val_loss / len(val_loader)
                 val_losses.append(avg_val_loss)
                 
+                # Update learning rate
+                scheduler.step(avg_val_loss)
+                
                 print(f'Epoch {epoch+1}, Train Loss: {avg_train_loss:.4f}, Val Loss: {avg_val_loss:.4f}')
+                
+                # Early stopping check
+                if avg_val_loss < best_val_loss:
+                    best_val_loss = avg_val_loss
+                    patience_counter = 0
+                    # Save best model
+                    torch.save(model.state_dict(), 'best_model.pth')
+                else:
+                    patience_counter += 1
+                    if patience_counter >= patience:
+                        print(f"Early stopping triggered after {epoch+1} epochs")
+                        # Load best model
+                        model.load_state_dict(torch.load('best_model.pth'))
+                        break
         else:
             print(f'Epoch {epoch+1}, Train Loss: {avg_train_loss:.4f}')
     
@@ -115,23 +146,28 @@ def train_model(model, train_data, train_labels, val_data=None, val_labels=None,
 
 def main():
     # Dataset and model parameters
-    pop909_path = 'algorhythms_app/POP909'  # Update with your actual path
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(current_dir)
+    pop909_path = os.path.join(project_root, 'POP909')
     sequence_length = 16
-    hidden_size = 256
-    num_epochs = 20
+    hidden_size = 512  # Increased hidden size
+    num_epochs = 50  # Increased number of epochs
     batch_size = 64
     learning_rate = 0.001
-    model_save_path = 'algorhythms_app/models/saved_models/gru_pop909.pth'
     
-    # Create directory for saved models if it doesn't exist
-    os.makedirs(os.path.dirname(model_save_path), exist_ok=True)
+    # Create directories for saved models and plots
+    saved_models_dir = os.path.join(project_root, 'models', 'saved_models')
+    os.makedirs(saved_models_dir, exist_ok=True)
+    
+    model_save_path = os.path.join(saved_models_dir, 'gru_pop909.pth')
+    note_range_path = os.path.join(saved_models_dir, 'note_range.npy')
     
     # Process dataset
     processor = POP909Processor(pop909_path, sequence_length=sequence_length)
     X, y, note_range = processor.prepare_data_for_training()
     
     # Save note range for generation later
-    np.save('algorhythms_app/models/saved_models/note_range.npy', note_range)
+    np.save(note_range_path, note_range)
     
     # Split data into training and validation sets (80/20)
     dataset_size = len(X)
@@ -147,11 +183,16 @@ def main():
     print(f"Training set: {len(X_train)} sequences")
     print(f"Validation set: {len(X_val)} sequences")
     
-    # Define input size based on note range
-    input_size = note_range[1] - note_range[0] + 1
-    output_size = input_size  # Same range for output
+    # Define input size based on note range and chord vocabulary
+    note_range_size = note_range[1] - note_range[0] + 1
+    chord_vocab_size = len(processor.chord_vocab)
+    input_size = note_range_size + chord_vocab_size  # Combined input size
+    output_size = note_range_size  # Output size remains the same
     
-    print(f"Input/output size: {input_size}")
+    print(f"Note range size: {note_range_size}")
+    print(f"Chord vocabulary size: {chord_vocab_size}")
+    print(f"Total input size: {input_size}")
+    print(f"Output size: {output_size}")
     
     # Create and train model
     print("Creating GRU model...")
@@ -171,7 +212,8 @@ def main():
         'input_size': input_size,
         'hidden_size': hidden_size,
         'output_size': output_size,
-        'sequence_length': sequence_length
+        'sequence_length': sequence_length,
+        'chord_vocab_size': chord_vocab_size
     }, model_save_path)
     
     print("Training complete!")
