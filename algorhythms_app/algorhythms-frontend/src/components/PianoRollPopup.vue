@@ -20,6 +20,7 @@
           <option value="sawtooth">Sawtooth</option>
           <option value="brass">Brass</option>
           <option value="strings">Strings</option>
+          <option value="drums">Drums</option>
         </select>
         <button 
           class="play-button" 
@@ -124,29 +125,15 @@ export default {
       currentlyPlayingNotes: new Set(),
       currentPlaybackCell: null,
       selectedInstrument: 'piano',
-      isDraggingOver: false
+      isDraggingOver: false,
+      polySynth: null
     }
   },
   created() {
-    // Generate notes from C1 to C8 (8 octaves)
-    const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-    const notes = [];
+    this.polySynth = new Tone.PolySynth(Tone.Synth).toDestination();
     
-    // Start from MIDI note 12 (C1) to MIDI note 108 (B8)
-    for (let midi = 12; midi <= 108; midi++) {
-      const octave = Math.floor(midi / 12) - 1;
-      const noteIndex = midi % 12;
-      const noteName = noteNames[noteIndex];
-      const isBlack = noteName.includes('#');
-      
-      notes.push({
-        midi,
-        label: `${noteName}${octave}`,
-        isBlack
-      });
-    }
-    
-    this.notes = notes.reverse();
+    // Generate notes based on selected instrument
+    this.updateNotes();
   },
   watch: {
     show(newValue) {
@@ -158,6 +145,18 @@ export default {
               const scrollPosition = c5Index * 30;
               this.$refs.scrollContainer.scrollTop = scrollPosition;
             }
+          }
+        });
+      }
+    },
+    selectedInstrument(newValue) {
+      this.updateNotes();
+      this.handleInstrumentChange();
+      // Reset scroll position when switching to drums
+      if (newValue === 'drums') {
+        this.$nextTick(() => {
+          if (this.$refs.scrollContainer) {
+            this.$refs.scrollContainer.scrollTop = 0;
           }
         });
       }
@@ -346,6 +345,58 @@ export default {
     handleGridScroll(event) {
       if (this.$refs.pianoKeys) {
         this.$refs.pianoKeys.scrollTop = event.target.scrollTop;
+      }
+    },
+    updateNotes() {
+      if (this.selectedInstrument === 'drums') {
+        // Generate drum notes (General MIDI drum mapping)
+        this.notes = [
+          { midi: 35, label: 'Bass Drum 2', isBlack: false },
+          { midi: 36, label: 'Bass Drum 1', isBlack: false },
+          { midi: 37, label: 'Side Stick', isBlack: false },
+          { midi: 38, label: 'Snare 1', isBlack: false },
+          { midi: 39, label: 'Hand Clap', isBlack: false },
+          { midi: 40, label: 'Snare 2', isBlack: false },
+          { midi: 41, label: 'Low Tom 2', isBlack: false },
+          { midi: 42, label: 'Closed Hi-hat', isBlack: false },
+          { midi: 43, label: 'Low Tom 1', isBlack: false },
+          { midi: 44, label: 'Pedal Hi-hat', isBlack: false },
+          { midi: 45, label: 'Mid Tom 2', isBlack: false },
+          { midi: 46, label: 'Open Hi-hat', isBlack: false },
+          { midi: 47, label: 'Mid Tom 1', isBlack: false },
+          { midi: 48, label: 'High Tom 2', isBlack: false },
+          { midi: 49, label: 'Crash 1', isBlack: false },
+          { midi: 50, label: 'High Tom 1', isBlack: false },
+          { midi: 51, label: 'Ride 1', isBlack: false },
+          { midi: 52, label: 'Chinese Cymbal', isBlack: false },
+          { midi: 53, label: 'Ride Bell', isBlack: false },
+          { midi: 54, label: 'Tambourine', isBlack: false },
+          { midi: 55, label: 'Splash Cymbal', isBlack: false },
+          { midi: 56, label: 'Cowbell', isBlack: false },
+          { midi: 57, label: 'Crash 2', isBlack: false },
+          { midi: 58, label: 'Vibraslap', isBlack: false },
+          { midi: 59, label: 'Ride 2', isBlack: false }
+        ].reverse(); // Reverse to show from top to bottom
+      } else {
+        // Generate regular piano notes
+        const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+        const notes = [];
+        
+        // Start from MIDI note 12 (C1) to MIDI note 108 (B8)
+        for (let midi = 12; midi <= 108; midi++) {
+          const octave = Math.floor(midi / 12) - 1;
+          const noteIndex = midi % 12;
+          const noteName = noteNames[noteIndex];
+          const isBlack = noteName.includes('#');
+          
+          notes.push({
+            midi,
+            label: `${noteName}${octave}`,
+            isBlack
+          });
+        }
+        
+        this.notes = notes.reverse();
       }
     }
   }

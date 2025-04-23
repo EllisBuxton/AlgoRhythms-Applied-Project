@@ -29,9 +29,8 @@
 
     <div class="centered-controls">
       <div class="transport-controls">
-        <button class="transport-button" @click="togglePlayPause">
-          <span v-if="!isPlaying">▶</span>
-          <span v-else>⏸</span>
+        <button @click="togglePlayback" class="play-button">
+          {{ isPlaying ? 'Stop' : 'Play' }}
         </button>
         <button class="transport-button" @click="stop">⏹</button>
         <button class="transport-button generate-button" @click="generateMelody">🎵</button>
@@ -115,21 +114,8 @@ export default {
     }
   },
   methods: {
-    togglePlayPause() {
+    togglePlayback() {
       this.isPlaying = !this.isPlaying;
-      if (this.isPlaying) {
-        // Reset all melody playback positions when starting
-        if (this.$refs.trackList) {
-          this.$refs.trackList.tracks.forEach(track => {
-            track.melodies.forEach(melody => {
-              melody.lastPlayedCell = -1;
-            });
-          });
-        }
-        this.startTimer();
-      } else {
-        this.pauseTimer();
-      }
       this.$emit('playback-changed', this.isPlaying);
     },
     stop() {
@@ -265,10 +251,12 @@ export default {
       if (this.wasPlaying) {
         this.pauseTimer();
       }
+      this.$emit('playhead-drag-started');
     },
     handlePlayheadDragEnd() {
       // Don't restart the timer here, as it's handled in handlePlayheadMoved
       this.wasPlaying = false;
+      this.$emit('playhead-drag-ended');
     },
     handlePlayNote({ midiNote, instrument }) {
       this.playMidiNote(midiNote, instrument);
