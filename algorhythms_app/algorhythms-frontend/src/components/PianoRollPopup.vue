@@ -152,6 +152,9 @@ export default {
     selectedInstrument(newValue) {
       this.updateNotes();
       this.handleInstrumentChange();
+      // Clear notes when switching instruments
+      this.placedNotes.clear();
+      this.placedNotes = new Map(this.placedNotes);
       // Reset scroll position when switching to drums
       if (newValue === 'drums') {
         this.$nextTick(() => {
@@ -314,9 +317,14 @@ export default {
           
           // Only add notes within our 256-cell range
           if (cellIndex < 256) {
-            this.toggleNote(note.midi, cellIndex);
+            // Add note directly to placedNotes without triggering sound
+            const noteKey = `${note.midi}-${cellIndex}`;
+            this.placedNotes.set(noteKey, true);
           }
         });
+        
+        // Update the placedNotes reference to trigger reactivity
+        this.placedNotes = new Map(this.placedNotes);
         
         // If the melody is longer than 256 cells, show a message
         const totalCells = Math.ceil((latestTime - earliestTime) / sixteenthNoteDuration);

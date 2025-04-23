@@ -130,6 +130,11 @@ export default {
         this.checkAndPlayMelodies(newTime);
       }
     },
+    isPlaying(newValue) {
+      if (newValue) {
+        this.checkAndPlayMelodies(this.currentTime);
+      }
+    },
     isDragging(newValue) {
       if (!newValue) {
         // When dragging stops, update the currentTime based on the final position

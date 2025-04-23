@@ -116,6 +116,11 @@ export default {
   methods: {
     togglePlayback() {
       this.isPlaying = !this.isPlaying;
+      if (this.isPlaying) {
+        this.startTimer();
+      } else {
+        this.pauseTimer();
+      }
       this.$emit('playback-changed', this.isPlaying);
     },
     stop() {

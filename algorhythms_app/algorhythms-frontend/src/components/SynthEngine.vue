@@ -13,7 +13,45 @@ export default {
     }
   },
   created() {
-    this.polySynth = new Tone.PolySynth(Tone.Synth).toDestination();
+    // Create separate synths for each instrument type
+    this.synths = {
+      piano: new Tone.PolySynth(Tone.Synth, {
+        oscillator: { type: 'triangle' },
+        envelope: {
+          attack: 0.005,
+          decay: 0.1,
+          sustain: 0.3,
+          release: 1
+        }
+      }).toDestination(),
+      sawtooth: new Tone.PolySynth(Tone.Synth, {
+        oscillator: { type: 'sawtooth' },
+        envelope: {
+          attack: 0.05,
+          decay: 0.2,
+          sustain: 0.5,
+          release: 1
+        }
+      }).toDestination(),
+      brass: new Tone.PolySynth(Tone.Synth, {
+        oscillator: { type: 'square' },
+        envelope: {
+          attack: 0.1,
+          decay: 0.3,
+          sustain: 0.6,
+          release: 0.8
+        }
+      }).toDestination(),
+      strings: new Tone.PolySynth(Tone.Synth, {
+        oscillator: { type: 'sine' },
+        envelope: {
+          attack: 0.2,
+          decay: 0.3,
+          sustain: 0.8,
+          release: 1.5
+        }
+      }).toDestination()
+    };
     
     // Create drum synthesizers with distinct sounds
     this.kickSynth = new Tone.MembraneSynth({
@@ -152,30 +190,15 @@ export default {
     ).toDestination();
   },
   beforeUnmount() {
-    if (this.polySynth) {
-      this.polySynth.dispose();
-    }
-    if (this.kickSynth) {
-      this.kickSynth.dispose();
-    }
-    if (this.snareSynth) {
-      this.snareSynth.dispose();
-    }
-    if (this.hihatSynth) {
-      this.hihatSynth.dispose();
-    }
-    if (this.tomSynth) {
-      this.tomSynth.dispose();
-    }
-    if (this.rideSynth) {
-      this.rideSynth.dispose();
-    }
-    if (this.crashSynth) {
-      this.crashSynth.dispose();
-    }
-    if (this.chineseCymbalSynth) {
-      this.chineseCymbalSynth.dispose();
-    }
+    // Dispose of all synths
+    Object.values(this.synths).forEach(synth => synth.dispose());
+    if (this.kickSynth) this.kickSynth.dispose();
+    if (this.snareSynth) this.snareSynth.dispose();
+    if (this.hihatSynth) this.hihatSynth.dispose();
+    if (this.tomSynth) this.tomSynth.dispose();
+    if (this.rideSynth) this.rideSynth.dispose();
+    if (this.crashSynth) this.crashSynth.dispose();
+    if (this.chineseCymbalSynth) this.chineseCymbalSynth.dispose();
   },
   methods: {
     async startAudioContext() {
@@ -265,63 +288,15 @@ export default {
               console.warn("No drum sound mapped for MIDI note:", midiNote);
           }
         } else {
-          this.polySynth.set({
-            oscillator: {
-              type: this.getOscillatorType(instrument)
-            },
-            envelope: this.getEnvelopeSettings(instrument),
-            volume: -6
-          });
-          
-          const freq = Tone.Frequency(midiNote, "midi");
-          await this.polySynth.triggerAttackRelease(freq, "8n", now);
+          // Use the appropriate synth for the instrument
+          const synth = this.synths[instrument];
+          if (synth) {
+            const freq = Tone.Frequency(midiNote, "midi");
+            await synth.triggerAttackRelease(freq, "8n", now);
+          }
         }
       } catch (error) {
         console.error('Error playing note:', error);
-      }
-    },
-    getOscillatorType(instrument) {
-      switch (instrument) {
-        case 'sawtooth':
-          return 'sawtooth';
-        case 'brass':
-          return 'square';
-        case 'strings':
-          return 'sine';
-        default: // piano
-          return 'triangle';
-      }
-    },
-    getEnvelopeSettings(instrument) {
-      switch (instrument) {
-        case 'sawtooth':
-          return {
-            attack: 0.05,
-            decay: 0.2,
-            sustain: 0.5,
-            release: 1
-          };
-        case 'brass':
-          return {
-            attack: 0.1,
-            decay: 0.3,
-            sustain: 0.6,
-            release: 0.8
-          };
-        case 'strings':
-          return {
-            attack: 0.2,
-            decay: 0.3,
-            sustain: 0.8,
-            release: 1.5
-          };
-        default: // piano
-          return {
-            attack: 0.005,
-            decay: 0.1,
-            sustain: 0.3,
-            release: 1
-          };
       }
     }
   }
