@@ -34,6 +34,7 @@
           <span v-else>⏸</span>
         </button>
         <button class="transport-button" @click="stop">⏹</button>
+        <button class="transport-button generate-button" @click="generateMelody">🎵</button>
       </div>
       
       <div class="time-display">
@@ -271,6 +272,46 @@ export default {
     },
     handlePlayNote({ midiNote, instrument }) {
       this.playMidiNote(midiNote, instrument);
+    },
+    async generateMelody() {
+      try {
+        console.log('Attempting to generate melody...');
+        const response = await fetch('http://localhost:5000/generate-melody', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            bpm: this.bpm,
+            instrument: 'piano'
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Server returned status ${response.status}`);
+        }
+        
+        const melody = await response.json();
+        console.log('Generated melody:', melody);
+        
+        // Save the generated melody
+        this.saveMelody({
+          ...melody,
+          bpm: this.bpm,
+          instrument: 'piano'
+        });
+        
+        // Show the melodies list
+        this.showMelodies = true;
+        
+      } catch (error) {
+        console.error('Error generating melody:', error);
+        if (error.message.includes('NetworkError')) {
+          alert('Could not connect to the server. Please make sure the backend server is running on port 5000.');
+        } else {
+          alert(`Failed to generate melody: ${error.message}`);
+        }
+      }
     }
   },
   watch: {

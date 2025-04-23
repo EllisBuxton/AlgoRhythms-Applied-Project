@@ -159,4 +159,13 @@
   background-color: #894ab6;
   color: white;
 }
+
+.generate-button {
+  background-color: #4caf50;
+}
+
+.generate-button:hover {
+  background-color: #388e3c;
+  transform: scale(1.05);
+}
  
