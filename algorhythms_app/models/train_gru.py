@@ -142,6 +142,11 @@ def train_model(model, train_data, train_labels, val_data=None, val_labels=None,
     plt.savefig('training_loss.png')
     plt.close()
     
+    # Save loss history arrays
+    np.save('train_losses.npy', np.array(train_losses))
+    if val_losses:
+        np.save('val_losses.npy', np.array(val_losses))
+    
     return model, train_losses, val_losses
 
 def main():
