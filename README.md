@@ -1,10 +1,10 @@
-# AlgoRhythms
+# 🎵 AlgoRhythms
 
 AlgoRhythms is a music generation application that uses machine learning to create unique musical compositions. The project uses a GRU (Gated Recurrent Unit) neural network model to generate music sequences, trained on MIDI data to learn musical patterns and structures. The GRU model's ability to capture long-term dependencies makes it particularly effective for music generation tasks. The project consists of a Flask backend for music generation and a Vue.js frontend for user interaction.
 
-## Setup and Running
+## 🚀 Setup and Running
 
-### Backend Setup
+### 🔧 Backend Setup
 1. Create a virtual environment (recommended):
 ```bash
 python -m venv venv
@@ -21,7 +21,7 @@ pip install -r requirements.txt
 python app.py
 ```
 
-### Frontend Setup
+### 🎨 Frontend Setup
 1. Navigate to the frontend directory:
 ```bash
 cd algorhythms_app
@@ -41,9 +41,9 @@ The application will be available at:
 - Frontend: http://localhost:8080
 - Backend: http://localhost:5000
 
-## Training and Generation
+## 🎼 Training and Generation
 
-### Training the Model
+### 🏋️ Training the Model
 To train the GRU model on your MIDI dataset:
 ```bash
 python train_model.py --data_path path/to/your/midi/files --epochs 100 --batch_size 32
@@ -54,7 +54,7 @@ Parameters:
 - `--epochs`: Number of training epochs (default: 100)
 - `--batch_size`: Size of training batches (default: 32)
 
-### Generating Music
+### 🎹 Generating Music
 To generate new music using the trained model:
 ```bash
 python generate_music.py --model_path path/to/trained/model --output_path path/to/save/midi --length 100
