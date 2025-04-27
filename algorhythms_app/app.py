@@ -56,81 +56,6 @@ model.load_state_dict(model_state_dict)
 model.to(device)
 model.eval()
 
-# Genetic Algorithm Parameters
-NOTE_RANGE = note_range  # Use the note range from the trained model
-POPULATION_SIZE = 10
-MELODY_LENGTH = 8
-MUTATION_RATE = 0.1
-
-def initialize_population(population_size, melody_length):
-    """Initialize a population of random melodies."""
-    population = []
-    for _ in range(population_size):
-        melody = []
-        for _ in range(melody_length):
-            note = random.randint(NOTE_RANGE[0], NOTE_RANGE[1])
-            duration = random.choice([0.25, 0.5, 1.0])  # Quarter, half, or whole note
-            melody.append({
-                'midiNote': note,
-                'duration': duration,
-                'velocity': random.randint(60, 100)
-            })
-        population.append(melody)
-    return population
-
-def fitness_function(melody, ratings):
-    """Calculate fitness based on user ratings."""
-    if not ratings:
-        return 0.5  # Default fitness if no ratings
-    return np.mean(ratings) / 5.0  # Normalize to 0-1 range
-
-def crossover(parent1, parent2):
-    """Perform crossover between two parent melodies."""
-    crossover_point = random.randint(1, len(parent1) - 1)
-    child1 = parent1[:crossover_point] + parent2[crossover_point:]
-    child2 = parent2[:crossover_point] + parent1[crossover_point:]
-    return child1, child2
-
-def mutate(melody, mutation_rate):
-    """Apply mutations to a melody."""
-    mutated = melody.copy()
-    for i in range(len(mutated)):
-        if random.random() < mutation_rate:
-            # Randomly change note, duration, or velocity
-            mutation_type = random.choice(['note', 'duration', 'velocity'])
-            if mutation_type == 'note':
-                mutated[i]['midiNote'] = random.randint(NOTE_RANGE[0], NOTE_RANGE[1])
-            elif mutation_type == 'duration':
-                mutated[i]['duration'] = random.choice([0.25, 0.5, 1.0])
-            else:
-                mutated[i]['velocity'] = random.randint(60, 100)
-    return mutated
-
-def evolve_population(population, ratings, num_generations=5, mutation_rate=0.1):
-    """Evolve the population over multiple generations."""
-    for _ in range(num_generations):
-        # Calculate fitness for each melody
-        fitnesses = [fitness_function(melody, ratings.get(i, [])) for i, melody in enumerate(population)]
-        
-        # Select parents based on fitness
-        parents = []
-        for _ in range(len(population) // 2):
-            parent1 = random.choices(population, weights=fitnesses)[0]
-            parent2 = random.choices(population, weights=fitnesses)[0]
-            parents.append((parent1, parent2))
-        
-        # Create new generation through crossover and mutation
-        new_population = []
-        for parent1, parent2 in parents:
-            child1, child2 = crossover(parent1, parent2)
-            child1 = mutate(child1, mutation_rate)
-            child2 = mutate(child2, mutation_rate)
-            new_population.extend([child1, child2])
-        
-        population = new_population
-    
-    return population
-
 def generate_random_seed(note_range, chord_vocab_size, seq_length=16):
     """Generate a random seed sequence within the trained note range"""
     min_note, max_note = 0, note_range[1] - note_range[0]  # Adjusted to 0-based index
@@ -271,27 +196,5 @@ def generate_melody():
 # In-memory storage for ratings
 melody_ratings = {}
 
-@app.route('/rate', methods=['POST'])
-def rate_melody():
-    data = request.json
-    melody_index = data['melodyIndex']
-    rating = int(data['rating'])
-
-    if melody_index in melody_ratings:
-        melody_ratings[melody_index].append(rating)
-    else:
-        melody_ratings[melody_index] = [rating]
-
-    return jsonify({'message': f'Melody {melody_index + 1} rated {rating}'})
-
-# Initialize population on app start
-population = initialize_population(POPULATION_SIZE, MELODY_LENGTH)
-
-@app.route('/evolve', methods=['GET'])
-def evolve_melodies():
-    global population
-    population = evolve_population(population, melody_ratings, num_generations=5, mutation_rate=MUTATION_RATE)
-    return jsonify({'melodies': population})
-
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True)
+    app.run(debug=True, host='0.0.0.0', port=5000)

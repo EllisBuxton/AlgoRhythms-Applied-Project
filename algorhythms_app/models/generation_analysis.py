@@ -1,4 +1,9 @@
 import os
+import sys
+
+# Add the project root directory to the Python path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -278,21 +283,33 @@ def generate_and_analyze_melody(model: GRUModel, processor: POP909Processor,
                           weights_only=False)
     note_range = checkpoint['note_range']
     chord_vocab_size = checkpoint['chord_vocab_size']
+    sequence_length = checkpoint.get('sequence_length', 16)
     
-    # Generate seed sequence
+    # Generate seed sequence using the same parameters as generate_with_gru.py
     seed_sequence, seed_notes = extract_real_seed_from_dataset(
         processor.dataset_path,
         note_range,
-        chord_vocab_size
+        chord_vocab_size,
+        seq_length=sequence_length
     )
+    
+    print(f"Using seed from dataset with notes: {seed_notes}")
     
     # Move seed sequence to the same device as the model
     seed_sequence = seed_sequence.to(model.device)
     
-    # Generate melody
-    generated_sequence = generate_melody(model, seed_sequence, length=64, temperature=0.8)
+    # Generate melody with exact same parameters as generate_with_gru.py
+    melody_length = 64  # Same as generate_with_gru.py
+    temperature = 0.8  # Same as generate_with_gru.py
+    print(f"Generating melody of length {melody_length} with temperature {temperature}...")
+    generated_sequence = generate_melody(model, seed_sequence, length=melody_length, temperature=temperature)
     
-    # Convert to MIDI file
+    # Convert to MIDI notes
+    generated_notes = [idx + note_range[0] for idx in generated_sequence]
+    print("Generated melody (MIDI note values):")
+    print(generated_notes)
+    
+    # Convert to MIDI file with same parameters as generate_with_gru.py
     generate_midi_file(
         generated_sequence,
         output_file=generated_midi,

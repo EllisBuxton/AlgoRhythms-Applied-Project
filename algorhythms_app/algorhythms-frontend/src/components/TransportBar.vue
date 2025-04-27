@@ -18,22 +18,28 @@
           <button class="delete-melody-btn" @click="deleteMelody(index)">×</button>
         </div>
       </div>
-      <button 
-        class="transport-button melodies-toggle" 
-        @click="toggleMelodies"
-        :class="{ active: showMelodies }"
-      >
-        📂 {{ savedMelodies.length }}
-      </button>
+      <div class="melody-buttons">
+        <button 
+          class="transport-button melodies-toggle" 
+          @click="toggleMelodies"
+          :class="{ active: showMelodies }"
+        >
+          <span class="file-icon">📂</span>
+          <span class="melody-count">{{ savedMelodies.length }}</span>
+        </button>
+        <button class="transport-button generate-button" @click="generateMelody">
+          <span class="generate-icon">🎵</span>
+          <span class="generate-text">Generate</span>
+        </button>
+      </div>
     </div>
 
     <div class="centered-controls">
       <div class="transport-controls">
         <button @click="togglePlayback" class="play-button">
-          {{ isPlaying ? 'Stop' : 'Play' }}
+          {{ isPlaying ? '⏸' : '▶' }}
         </button>
         <button class="transport-button" @click="stop">⏹</button>
-        <button class="transport-button generate-button" @click="generateMelody">🎵</button>
       </div>
       
       <div class="time-display">
